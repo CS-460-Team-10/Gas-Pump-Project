@@ -1,6 +1,8 @@
+package interfaces;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+
 import javafx.application.Platform;
 import javafx.application.Application;
 import javafx.geometry.Pos;
@@ -15,13 +17,13 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import socketAPI.ioServer;
 
 public class screen {
-    private final ioPort api;
+    private final ioServer api;
 
-    public screen(int deviceType, int connector) throws UnknownHostException, IOException { 
-        api = ioPort.ChooseDevice(deviceType);  
-        api.ioport(connector);     
+    public screen(int connector) throws UnknownHostException, IOException { 
+        api = new ioServer(connector);
     }
 
     /**
@@ -45,7 +47,7 @@ public class screen {
             // Process connections
             new Thread(() -> {
                 try {
-                    display = new screen(3, 1);
+                    display = new screen(6000);
 
                     // Update screen via messages from hub
                     while (true) {

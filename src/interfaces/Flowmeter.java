@@ -1,9 +1,11 @@
+package interfaces;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import javafx.util.Duration;
 
+import javafx.util.Duration;
+import socketAPI.ioServer;
 import javafx.scene.control.Label;
 import helpers.imageLoader;
 import javafx.animation.PauseTransition;
@@ -22,15 +24,14 @@ public class Flowmeter {
     private boolean pumping;
     static PrintWriter out;
     static BufferedReader bf;
-    ioPort api;
+    private final ioServer api;
 
-    public Flowmeter(double pricePerGallon, int deviceType, int connector) throws IOException {
+    public Flowmeter(double pricePerGallon, int connector) throws IOException {
         this.pricePerGallon = pricePerGallon;
         this.gallonsPumped = 0.0;
         this.pumping = false;
 
-        api = ioPort.ChooseDevice(deviceType);
-        api.ioport(connector);
+        api = new ioServer(connector);
     }
 
     // Starts pumping fuel
@@ -109,7 +110,7 @@ public class Flowmeter {
             // Process connections
             new Thread(() -> {
                 try {
-                    meter = new Flowmeter(2.49, 3, 2);
+                    meter = new Flowmeter(2.49, 6002);
                     boolean isOn = false;
 
                     while (true) {

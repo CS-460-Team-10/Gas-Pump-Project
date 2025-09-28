@@ -1,14 +1,17 @@
+package interfaces;
 import java.io.IOException;
+
 import helpers.imageLoader;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import socketAPI.ioServer;
 
 public class Hose {
     private boolean attached;
-    private final ioPort api;
+    private final ioServer api;
     private boolean tankFull;
     private double fuelLevel;
     private double maxFuel;
@@ -19,16 +22,15 @@ public class Hose {
      * @param connector Connector/port number to connect the device
      * @throws IOException if the device initialization fails
      */
-    public Hose(int deviceType, int connector) throws IOException {
+    public Hose(int port) throws IOException {
         this.attached = false;
         this.tankFull = false;
         this.maxFuel = 12.0;
         this.fuelLevel = Math.random()*6.0;
         System.out.println("Max Fuel Capacity: " + this.maxFuel);
         System.out.println("Current Fuel Level: " + this.fuelLevel);
-        this.api = ioPort.ChooseDevice(deviceType);
-        api.ioport(connector);
-        System.out.println("Hose is up: " + connector);
+        this.api = new ioServer(port);
+        System.out.println("Hose is up: " + port);
 
     }
 
@@ -82,7 +84,7 @@ public class Hose {
 
             new Thread(() -> {
                 try {
-                    hose = new Hose(3, 4);
+                    hose = new Hose(4);
 
                     while (true) {
                         String msg = hose.api.get();
