@@ -10,28 +10,39 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
-public class CreditCardReader {
+public class cardReader {
     private final ioServer api;
 
-    public CreditCardReader(int connector) throws Exception {
+    public cardReader(int connector) throws Exception {
         api = new ioServer(connector);
     }
 
     private void readCard(String cardNumber) {
         if (cardNumber != null && !cardNumber.isEmpty()) {
-            api.send("card-input(" + cardNumber + ")");
+            api.send("Card-No. - " + cardNumber);
         }
     }
 
+    private String genRandomCard(){
+        // Generate a random 16-digit credit card number
+        StringBuilder cardNumber = new StringBuilder();
+        for (int i = 0; i < 16; i++) {
+            cardNumber.append((int)(Math.random() * 10));
+            if(i == 3 || i == 7){
+                cardNumber.append("-");
+            }
+        }
+        return cardNumber.toString();
+    }
+
     public static class CardReaderGraphics extends Application {
-        private CreditCardReader cardReader;
+        private cardReader cardReader;
 
         @Override
         public void start(Stage primaryStage) {
             new Thread(() -> {
                 try {
-                    CreditCardReader c = new CreditCardReader(6001);
-                    this.cardReader = c;
+                    cardReader = new cardReader(6001);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -53,7 +64,7 @@ public class CreditCardReader {
                 first.setOnFinished(ev -> { reader.setImage(img.imageList.get(0)); second.play(); });
                 second.setOnFinished(ev -> { reader.setImage(img.imageList.get(2)); });
                 first.play();
-                cardReader.readCard("Card Tapped!");
+                cardReader.readCard(cardReader.genRandomCard());
             });
 
             StackPane root = new StackPane(reader);
@@ -65,6 +76,6 @@ public class CreditCardReader {
     }
 
     public static void main(String[] args) throws Exception {
-        Application.launch(CreditCardReader.CardReaderGraphics.class, args);
+        Application.launch(cardReader.CardReaderGraphics.class, args);
     }
 }

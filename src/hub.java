@@ -1,5 +1,12 @@
 import java.io.IOException;
 
+import clients.Customer;
+import clients.DispensingUnit;
+import clients.GasStation;
+import clients.HoseSensors;
+import clients.PaymentSystem;
+
+// DISCLAIMER *****(Must start all interfaces before running hub logic)*****                                    ************
 public class hub {
 
     // UI Payloads
@@ -24,7 +31,7 @@ public class hub {
 
     public hub() throws IOException {
 
-        // Instantiate client objects
+        // Instantiate client objects *****(Must start all interfaces before running hub logic)*****                                    ************
         this.customer  = new Customer("localhost", 6000, "localhost", 6001);
         this.dispensingUnit = new DispensingUnit("localhost", 6002, "localhost", 6003);
         this.hoseSensors = new HoseSensors("localhost", 6004, "localhost", 6005);
@@ -154,8 +161,12 @@ public class hub {
         while (msg == null) { msg = pollInterfaceMessages("Meter"); } // get final amount fueled
         if (msg.contains("Inactivity Timeout")) { System.out.println("Error: Could not determine sale amount. Exiting..."); System.exit(1); } // critical error - exits
 
+        paymentSystem.sendToBank("Charge-Card. - " + msg);
+
+        while (msg == null) { msg = pollInterfaceMessages("Bank"); } // get charge approval
+        if (msg.contains("Inactivity Timeout")) { System.out.println("Error: Could not determine sale amount. Exiting..."); System.exit(1); } // critical error - exits
+
         gasStation.sendToStation("Transaction complete. Amount: " + msg);
-        paymentSystem.sendToBank("Transaction complete. Amount: " + msg);
         customer.display(UI_WELCOME);
     }
 

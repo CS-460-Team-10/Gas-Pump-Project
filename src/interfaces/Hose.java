@@ -18,7 +18,6 @@ public class hose {
 
     /**
      * Constructor to initialize the hose device.
-     * @param deviceType Type of the device to choose
      * @param connector Connector/port number to connect the device
      * @throws IOException if the device initialization fails
      */
@@ -84,7 +83,7 @@ public class hose {
 
             new Thread(() -> {
                 try {
-                    hose = new hose(4);
+                    hose = new hose(6004);
 
                     while (true) {
                         String msg = hose.api.get();

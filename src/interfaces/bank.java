@@ -4,12 +4,21 @@ import socketAPI.ioServer;
 
 public class bank {
     private final ioServer api; // communcation api
+    private double balance = 0; // dummy balance variable
 
     public bank(int connector) throws Exception {
         // open the device on port
         api = new ioServer(connector);
+
         // start the loop for bank logic
         authorization();
+    }
+
+    private boolean validCard(){
+        balance = Math.random() * 100; // Balance of the card
+
+        // 90% chance of being valid
+        return Math.random() < 0.9;
     }
 
     public void authorization() throws Exception {
@@ -20,25 +29,21 @@ public class bank {
             if (msg != null) {
                 System.out.println("Bank Received: " + msg);
 
-                // if hub ask to authorize card
-                if (msg.startsWith("authorize")) {
-                    api.send("approved");
+                // Process card data
+                if (msg.contains("Card-No. - ") && validCard()) {
+                    api.send("Card-Approved.");
                     System.out.println("Bank approved");
-                } 
-                // if hub ask to charge the card with money amount
-                else if (msg.startsWith("charge-request")) {
-                    String inside = msg.substring(msg.indexOf("(") + 1, msg.length() - 1);
-                    String[] prts = inside.split(",");
-                    if (prts.length == 2) {
-                        String amount = prts[1].trim();
-                        if (!amount.equals("0")) {
-                            api.send("charged(" + amount + ")");
-                            System.out.println("Bank charged " + amount);
-                        } else {
-                            api.send("charge-failed");
-                            System.out.println("Bank charge-failed");
-                        }
-                    }
+
+                } else if (msg.contains("Card-No. - ")){
+                    api.send("Card-Denied.");
+                    System.out.println("Bank denied");
+                }
+
+                // Charge card for transaction
+                if (msg.contains("Charge-Card. - ")) {
+                    msg = msg.trim().replace("Charge-Card. - ", "");
+                    balance -= Double.parseDouble(msg);
+                    System.out.println("Bank charged card. New balance: " + balance);
                 }
             }
             Thread.sleep(50); // small delay not to spin

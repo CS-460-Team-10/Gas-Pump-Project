@@ -11,7 +11,6 @@ public class pump {
 
     /**
      * Constructor to initialize the pump device.
-     * @param deviceType Type of the device to choose
      * @param connector Connector/port number to connect the device
      * @throws IOException if the device initialization fails
      */
