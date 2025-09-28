@@ -9,7 +9,7 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import socketAPI.ioServer;
 
-public class Hose {
+public class hose {
     private boolean attached;
     private final ioServer api;
     private boolean tankFull;
@@ -22,7 +22,7 @@ public class Hose {
      * @param connector Connector/port number to connect the device
      * @throws IOException if the device initialization fails
      */
-    public Hose(int port) throws IOException {
+    public hose(int port) throws IOException {
         this.attached = false;
         this.tankFull = false;
         this.maxFuel = 12.0;
@@ -67,7 +67,7 @@ public class Hose {
      * Inner class for the GUI representation of the hose.
      */
     public static class HoseGraphics extends Application {
-        private Hose hose;
+        private hose hose;
 
         @Override
         public void start(Stage primaryStage) {
@@ -84,7 +84,7 @@ public class Hose {
 
             new Thread(() -> {
                 try {
-                    hose = new Hose(4);
+                    hose = new hose(4);
 
                     while (true) {
                         String msg = hose.api.get();
@@ -139,6 +139,6 @@ public class Hose {
      * Main method to launch JavaFX app.
      */
     public static void main(String[] args) throws InterruptedException, Exception {
-        Application.launch(Hose.HoseGraphics.class, args);
+        Application.launch(hose.HoseGraphics.class, args);
     }
 }

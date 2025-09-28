@@ -1,6 +1,6 @@
 import java.io.IOException;
 
-public class Hub {
+public class hub {
 
     // UI Payloads
     private static final String UI_WELCOME =
@@ -22,7 +22,7 @@ public class Hub {
     private final GasStation gasStation;
     private int counter = 0;
 
-    public Hub() throws IOException {
+    public hub() throws IOException {
 
         // Instantiate client objects
         this.customer  = new Customer("localhost", 6000, "localhost", 6001);
@@ -170,7 +170,7 @@ public class Hub {
 
     public static void main(String[] args) throws Exception {
 
-        Hub hub = new Hub();
+        hub hub = new hub();
 
         try { 
             hub.run(); 

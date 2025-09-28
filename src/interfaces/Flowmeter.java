@@ -17,7 +17,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
-public class Flowmeter {
+public class flowMeter {
     private final double FLOW_RATE = 0.44; // Gal/s
     private double gallonsPumped;
     private double pricePerGallon;
@@ -26,7 +26,7 @@ public class Flowmeter {
     static BufferedReader bf;
     private final ioServer api;
 
-    public Flowmeter(double pricePerGallon, int connector) throws IOException {
+    public flowMeter(double pricePerGallon, int connector) throws IOException {
         this.pricePerGallon = pricePerGallon;
         this.gallonsPumped = 0.0;
         this.pumping = false;
@@ -73,7 +73,7 @@ public class Flowmeter {
      * Inner class for the GUI representation of the hose.
      */
     public static class FlowmeterGraphics extends Application {
-        private Flowmeter meter;
+        private flowMeter meter;
 
         @Override
         public void start(Stage primaryStage) {
@@ -110,7 +110,7 @@ public class Flowmeter {
             // Process connections
             new Thread(() -> {
                 try {
-                    meter = new Flowmeter(2.49, 6002);
+                    meter = new flowMeter(2.49, 6002);
                     boolean isOn = false;
 
                     while (true) {
@@ -163,7 +163,7 @@ public class Flowmeter {
      * Main method to launch JavaFX app.
      */
     public static void main(String[] args) throws InterruptedException, Exception {
-        Application.launch(Flowmeter.FlowmeterGraphics.class, args);
+        Application.launch(flowMeter.FlowmeterGraphics.class, args);
     }
 }
 
