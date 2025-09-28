@@ -8,7 +8,7 @@ import socketAPI.ioServer;
 public class gasStation {
     private ioServer api; // communcation api
     // price list for all fuel types, made them up, although unleaded is pretty compareable with acutal NM gas prices
-    String[] prices = {"Unleaded:3.25", "Premium:3.75", "PremiumPlus:4.00", "Gasoline:3.50"};
+    private String[] prices = {"Unleaded:3.25", "Premium:3.75", "PremiumPlus:4.00", "Gasoline:3.50"};
 
     public gasStation(int connector) throws Exception {
         // open the device on port
@@ -19,19 +19,19 @@ public class gasStation {
         Transactions();
     }
 
+    // Send product list
     private void sendPriceList() {
-        // build the price list message string
-        StringBuilder sb = new StringBuilder();
-        sb.append("price-list(");
-        for (int i = 0; i < prices.length; i++) {
-            sb.append(prices[i]);
-            if (i < prices.length - 1) sb.append(",");
-        }
-        sb.append(")");
-        // send the price list to hub
-        api.send(sb.toString());
-        System.out.println("GasStation Sending: " + sb.toString());
+    StringBuilder sb = new StringBuilder("Product-List. - ");
+    for (int i = 0; i < prices.length; i++) {
+        String[] kv = prices[i].split(":");     // ["Unleaded","3.25"]
+        String grade = kv[0];
+        String price = kv.length > 1 ? kv[1] : "0";
+        sb.append(grade).append('-').append(price);
+        if (i < prices.length - 1) sb.append(':');  // pairs separated by ':'
     }
+    api.send(sb.toString());
+    System.out.println("GasStation Sending: " + sb);
+}
 
     private void Transactions() throws Exception {
         // main loop keep running

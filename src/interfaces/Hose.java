@@ -44,11 +44,11 @@ public class hose {
         if (sensorAttached && !attached) {
             attached = true;
             System.out.println("Hose attached");
-            api.send("Hose attached");
+            api.send("Hose-Attached.");
         } else if (!sensorAttached && attached) {
             attached = false;
             System.out.println("Hose detached");
-            api.send("Hose detached");
+            api.send("Hose-Detached.");
         }
 
         // checks the status of the tank

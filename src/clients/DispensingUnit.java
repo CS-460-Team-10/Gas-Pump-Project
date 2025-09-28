@@ -37,6 +37,12 @@ public class DispensingUnit {
         gasPumpPort.send(msg);
     }
 
+    // Send fuel products to flow meter and pump
+    public void sendProductList(String msg){
+        gasPumpPort.send(msg);
+        flowMeterPort.send(msg);
+    }
+
     // Get the current amount of fuel purchased from the FlowMeter server
     public String getFuelPurchased() {
         return flowMeterPort.get();

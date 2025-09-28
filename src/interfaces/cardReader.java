@@ -40,13 +40,6 @@ public class cardReader {
 
         @Override
         public void start(Stage primaryStage) {
-            new Thread(() -> {
-                try {
-                    cardReader = new cardReader(6001);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }, "CardReader-Conn").start();
 
             imageLoader img = new imageLoader();
             img.loadImages();
@@ -57,13 +50,40 @@ public class cardReader {
             reader.setSmooth(true);
             reader.setPickOnBounds(true);
 
+            try {
+                cardReader = new cardReader(6001);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             reader.setOnMouseClicked(e -> {
                 reader.setImage(img.imageList.get(2));
-                PauseTransition first = new PauseTransition(Duration.millis(1000));
-                PauseTransition second = new PauseTransition(Duration.millis(2000)); 
-                first.setOnFinished(ev -> { reader.setImage(img.imageList.get(0)); second.play(); });
-                second.setOnFinished(ev -> { reader.setImage(img.imageList.get(2)); });
-                first.play();
+                PauseTransition blue = new PauseTransition(Duration.millis(1000));
+                PauseTransition red = new PauseTransition(Duration.millis(1000)); 
+                PauseTransition green = new PauseTransition(Duration.millis(1000)); 
+                blue.setOnFinished(ev -> { 
+                    reader.setImage(img.imageList.get(0)); 
+                    String cardApproval = null; int i = 0;
+
+                    while(cardApproval == null || cardApproval.isEmpty()){
+                        i++;
+                        try { Thread.sleep(100); } catch (InterruptedException e1) { e1.printStackTrace(); }
+                        if(i > 100) break; // timeout after 10 seconds
+
+                        cardApproval = cardReader.api.get();
+                        if(cardApproval != null && !cardApproval.isEmpty()){
+                            if(cardApproval.contains("C1")){
+                                green.play();
+                            } else if(cardApproval.contains("C0")){
+                                red.play(); 
+                            }
+                        }
+                    }
+                });
+                green.setOnFinished(ev -> { reader.setImage(img.imageList.get(1)); red.play(); });
+                red.setOnFinished(ev -> { reader.setImage(img.imageList.get(2)); });
+                
+                blue.play();
                 cardReader.readCard(cardReader.genRandomCard());
             });
 

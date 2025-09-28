@@ -20,14 +20,15 @@ import javafx.stage.Stage;
 public class flowMeter {
     private final double FLOW_RATE = 0.44; // Gal/s
     private double gallonsPumped;
-    private double pricePerGallon;
+    private double pricePerGallon = 1.00; // Default to 1 dollar
     private boolean pumping;
     static PrintWriter out;
     static BufferedReader bf;
     private final ioServer api;
+    private String[] productList = new String[4];
+    private String fuelChosen = "";
 
-    public flowMeter(double pricePerGallon, int connector) throws IOException {
-        this.pricePerGallon = pricePerGallon;
+    public flowMeter(int connector) throws IOException {
         this.gallonsPumped = 0.0;
         this.pumping = false;
 
@@ -67,6 +68,14 @@ public class flowMeter {
     // check message from the ioPort (e.g. control signals).
     public String checkMessage() throws IOException {
         return api.get();
+    }
+
+    // Selects fuel to flow in pump
+    public void selectGrade(int i){
+        fuelChosen = productList[i];
+        System.out.println("Fuel Selected: " + fuelChosen);
+        String[] choice = fuelChosen.split("-"+1);
+        pricePerGallon = Double.parseDouble(choice[1].trim());
     }
 
     /**
@@ -110,7 +119,7 @@ public class flowMeter {
             // Process connections
             new Thread(() -> {
                 try {
-                    meter = new flowMeter(2.49, 6002);
+                    meter = new flowMeter(6002);
                     boolean isOn = false;
 
                     while (true) {
@@ -139,6 +148,19 @@ public class flowMeter {
                                     p.setOnFinished(ev -> fuelCostLabel.setText(""));
                                     p.play();
                                 });
+                            } else if(msg.contains("Fuel-Grade. - ")){
+                                msg.replace("Product-List. - ", "");
+                                msg.replace("[\\d-]", "");
+                                int i = 0;
+                                for (String product : meter.productList) {
+                                    i++;
+                                    if(product.contains(msg));
+                                    meter.selectGrade(i);
+                                }
+                            } else if(msg.contains("Product-List. - ")){
+                                msg = msg.replace("Product-List. - ", "");
+                                System.out.println("Product-List: " + msg);
+                                meter.productList = msg.split(":");
                             }
                         }
 

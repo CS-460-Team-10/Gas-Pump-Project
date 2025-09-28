@@ -12,6 +12,19 @@ public class tankSensor {
         this.api = new ioServer(port);
         // Optionally announce initial state:
         api.send("Tank-Not-Full.");
+
+        reading();
+    }
+
+    private void reading(){
+        String msg = null;
+        
+        while(true){
+            msg = api.get();
+
+            if (msg != null && !msg.isEmpty()) {
+            }
+        }
     }
 
     // Set / toggle fullness and notify Hub

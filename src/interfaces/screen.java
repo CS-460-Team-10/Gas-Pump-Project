@@ -39,6 +39,11 @@ public class screen {
         private Color[] screenColor = { Color.BLACK, Color.RED, Color.GREEN, myBlue, Color.WHITE }; // 5 Screen Colors Supported
         private int[] textSize = { 30, 20, 15 }; // 3 Text Sizes Supported
         private int hCount = 5; // Number of rows to create in the terminal
+        private ArrayList<Button> buttonSequence = new ArrayList<>();
+        private ArrayList<Integer> buttonIDs = new ArrayList<>();
+        private int sequenceConfirmId = -1;
+        private boolean sequencer = false;
+        private int sequenceLength = 0;
 
         @Override
         public void start(Stage primaryStage) {
@@ -121,7 +126,8 @@ public class screen {
 
                 bL = new Button();
                 bL.setOnAction(event -> {
-                    sendData(bL, leftID);
+                    sendButtonData
+                    (bL, leftID);
                 });
 
                 tL = new Label();
@@ -130,7 +136,8 @@ public class screen {
 
                 bR = new Button();
                 bR.setOnAction(event -> {
-                    sendData(bR, rightID);
+                    sendButtonData
+                    (bR, rightID);
                 });
 
                 // Wrap buttons and fields into HBox (In the order: Button, Field, Field, Field, Button)
@@ -166,10 +173,14 @@ public class screen {
             }
         }
 
-        // Send data through api
-        private void sendData(Button b, int id){
-            System.out.println("SCREEN: bp" + id);
-            display.api.send("bp" + id);
+        // Send button data through api
+        private void sendButtonData
+        (Button b, int id){
+            if(sequencer) buttonSequencer(b, id);
+            else{
+                System.out.println("SENDING: bp" + id);
+                display.api.send("bp" + id);
+            }
         }
 
         // Create a blank screen
@@ -184,39 +195,73 @@ public class screen {
 
         // Interpret markup message (Only pass in what is changing)
         private void interpretMessage(String msg){
-            String[] tokens = msg.split(":"); // Partition the message
+            String[] tokens = msg.split(":");
             boolean wasCombined = false;
-            for(String token : tokens){
-                String[] settings = token.split("/"); // Partition the field settings
-                // Interpret textfield info
-                if(token.charAt(0)=='t'){
-                    String id = settings[0]; // "t0" or "t01"
+
+            for (String token : tokens) {
+                if (token.isBlank()) continue;
+                String[] settings = token.split("/");
+
+                // TEXT: t01/s1B/f1/c5/"..."
+                if (token.charAt(0) == 't') {
+                    String id = settings[0];               // e.g., "t01", "t23"
                     int fieldNum = Character.getNumericValue(id.charAt(1));
                     boolean combinedField = id.length() > 2 && Character.isDigit(id.charAt(2));
 
-                    // Determine row number
-                    if(fieldNum%2==0){ wasCombined = false; } // Reset combine history every even field number
-                    int rowNum = fieldNum/2;
+                    if (fieldNum % 2 == 0) wasCombined = false;      // reset on even
+                    int rowNum = fieldNum / 2;
                     horizontal row = hList.get(rowNum);
 
-                    // Determine if field is/was combined and set the textfield configuration
-                    if(combinedField){ 
+                    if (combinedField) {
                         wasCombined = true;
                         combineTextFields(row.tL, row.tLR, row.tR);
-                        fieldConfig(row.tLR, settings); 
-                    } 
-                    else if(fieldNum%2==0 && !wasCombined){ fieldConfig(row.tL, settings); } 
-                    else if (!wasCombined){ fieldConfig(row.tR, settings); }
+                        fieldConfig(row.tLR, settings);
+                    } else if (fieldNum % 2 == 0 && !wasCombined) {
+                        fieldConfig(row.tL, settings);
+                    } else if (!wasCombined) {
+                        fieldConfig(row.tR, settings);
+                    }
+                    continue;
                 }
-                // Interpret button info
-                else if(token.charAt(0)=='b'){ 
-                    // Determine row number
-                    int buttonNum = Character.getNumericValue(token.charAt(1));
-                    int rowNum = buttonNum/2;
+
+                // BUTTON PRELUDE / SEQUENCER: "bp" or "bps/2b3"
+                if (token.equals("bp")) {                 // plain "bp" → no sequencer
+                    sequencer = false;
+                    sequenceLength = 0;
+                    sequenceConfirmId = -1;
+                    buttonSequence.clear();
+                    buttonIDs.clear();
+                    continue;
+                }
+                if (token.startsWith("bps/")) {           // e.g., "bps/2b3"
+                    String spec = token.substring(4);     // "2b3"
+                    int b = spec.indexOf('b');
+                    if (b > 0 && b + 1 < spec.length()) {
+                        sequenceLength   = Integer.parseInt(spec.substring(0, b));     // 2
+                        sequenceConfirmId = Integer.parseInt(spec.substring(b + 1));   // 3
+                        sequencer = true;
+                        buttonSequence.clear();
+                        buttonIDs.clear();
+                    } else {
+                        // malformed — disable sequencer
+                        sequencer = false;
+                        sequenceLength = 0;
+                        sequenceConfirmId = -1;
+                    }
+                    continue;
+                }
+
+                // BUTTON CONFIG: "b0/a1", "b1/a0", ...
+                if (token.charAt(0) == 'b') {
+                    // ignore "bps" here — already handled above
+                    if (token.startsWith("bps")) continue;
+
+                    int buttonNum = Character.getNumericValue(token.charAt(1)); // 0..9 only
+                    int rowNum = buttonNum / 2;
                     horizontal row = hList.get(rowNum);
 
-                    if(buttonNum%2==0){ buttonConfig(row.bL, settings); }
-                    else{ buttonConfig(row.bR, settings); }
+                    if (buttonNum % 2 == 0) buttonConfig(row.bL, settings);
+                    else buttonConfig(row.bR, settings);
                 }
             }
         }
@@ -240,6 +285,51 @@ public class screen {
         private void buttonConfig(Button b, String[] tokens){
             boolean active = tokens[1].substring(1).equals("1");
             b.setDisable(!active);
+        }
+
+        // Create button sequence
+        private void buttonSequencer(Button b, int id){
+            if (!sequencer) return;
+
+            // record this press
+            buttonSequence.add(b);
+            buttonIDs.add(id);
+            
+            if (id == sequenceConfirmId && buttonSequence.size() == sequenceLength) {
+                sendFuelSelection();
+                resetSequence();
+                return;
+            }
+
+            // if too many presses then reset
+            if (buttonSequence.size() > sequenceLength) {
+                resetSequence();
+            }
+
+            System.out.println("bps " + id);
+            b.setDisable(true);
+        }
+
+        // Reset button sequence
+        private void resetSequence(){
+            sequencer = false;
+            sequenceLength = 0;
+            sequenceConfirmId = -1;
+            for (Button btn : buttonSequence) btn.setDisable(false);
+            buttonSequence.clear();
+            buttonIDs.clear();
+        }
+
+
+        // Send fuel selection
+        private void sendFuelSelection(){
+
+            // Determine row number
+            horizontal row = hList.get(buttonIDs.getFirst()/2);
+            String msg = row.tL.getText();
+            System.out.println("SENDING: Fuel-Grade. - " + msg);
+            Platform.runLater(() -> display.api.send("Fuel-Grade. - " + msg));
+            resetSequence();
         }
 
         // Make textfield Bold

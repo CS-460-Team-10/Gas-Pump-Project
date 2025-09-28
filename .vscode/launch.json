@@ -3,6 +3,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "cardReader",
+      "request": "launch",
+      "mainClass": "interfaces.cardReader",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
       "name": "tankSensor",
       "request": "launch",
       "mainClass": "interfaces.tankSensor",

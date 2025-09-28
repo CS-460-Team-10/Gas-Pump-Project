@@ -10,16 +10,18 @@ import clients.PaymentSystem;
 public class hub {
 
     // UI Payloads
-    private static final String UI_WELCOME =
-        "t01/s1B/f1/c5/\"Welcome!\":t23/s3R/f1/c5/\"Use the card reader to begin your transaction.\":t45/s1B/f1/c5/\"*\"";
-    private static final String UI_SELECT_FUEL =
-        "t01/s2R/f1/c5/\"Payment approved. Select fuel type:\":t2/s3I/f1/c5/\"Unleaded\":"
-      + "t3/s3R/f1/c5/\"Confirm\":t4/s3I/f1/c5/\"Premium\":t6/s3I/f1/c5/\"Premium Plus\":t8/s3I/f1/c5/\"Gasoline\"";
-    private static final String UI_ATTACH_HOSE =
+    private final String UI_WELCOME =
+        "bp:b0/a0:b1/a0:b2/a0:b3/a0:b4/a0:b5/a0:b6/a0:b7/a0:b8/a0:b9/a0:" + // Button config
+        "t01/s1B/f1/c5/\"Welcome!\":t23/s3R/f1/c5/\"Use the card reader to begin your transaction.\":t45/s1B/f1/c5/\"*\""; // Text config
+    private String UI_SELECT_FUEL;
+    private final String UI_ATTACH_HOSE =
+        "bp:b0/a0:b1/a0:b2/a0:b3/a0:b4/a0:b5/a0:b6/a0:b7/a0:b8/a0:b9/a0:" +
         "t23/s2R/f1/c5/\"Attach the hose to your vehicle's \\n       gas tank to begin fueling.\":t45/s1B/f1/c5/\"*\"";
-    private static final String UI_FUELING =
+    private final String UI_FUELING =
+        "bp:b0/a0:b1/a0:b2/a0:b3/a0:b4/a0:b5/a0:b6/a0:b7/a0:b8/a0:b9/a0:" +
         "t23/s2R/f1/c5/\"Fueling in progress...\":t45/s1B/f1/c5/\"*\"";
-    private static final String UI_FINAL =
+    private final String UI_FINAL =
+        "bp:b0/a0:b1/a0:b2/a0:b3/a0:b4/a0:b5/a0:b6/a0:b7/a0:b8/a0:b9/a0:" +
         "t01/s2B/f1/c5/\"Transaction complete.\":t45/s3I/f1/c5/\"Thank you!\":t67/s1B/f1/c5/\"*\"";
 
     private final Customer customer;
@@ -28,6 +30,7 @@ public class hub {
     private final PaymentSystem paymentSystem;
     private final GasStation gasStation;
     private int counter = 0;
+    private String[] ProductList = new String[4];
 
     public hub() throws IOException {
 
@@ -44,9 +47,24 @@ public class hub {
         // Initial welcome screen
         customer.display(UI_WELCOME);
 
+        // Get GasStation prices and fwd it to screen, pump, and flowmeter
+        String msg = null;
+        while (msg == null) { msg = pollInterfaceMessages("GasStation"); }
+        if (msg.contains("Inactivity Timeout")) { msg = null; return; }
+        else if(msg.contains("Product-List. - ")){
+            dispensingUnit.sendProductList(msg);
+            msg = msg.replace("Product-List. - ", "");
+            ProductList = msg.split(":");
+
+            UI_SELECT_FUEL = "bps/2b3:b0/a0:b1/a0:b2/a1:b3/a1:b4/a1:b5/a0:b6/a1:b7/a0:b8/a1:b9/a0:" +
+                            "t01/s2R/f1/c5/\"Payment approved. Select fuel type:\":t2/s3I/f1/c5/\"" + ProductList[0] + "\":"
+                        + "t3/s3R/f1/c5/\"Confirm\":t4/s3I/f1/c5/\"" + ProductList[1] + "\":t6/s3I/f1/c5/\"" + ProductList[2] + 
+                        "\":t8/s3I/f1/c5/\"" + ProductList[3] + "\"";
+        }
+
         // Main running loop
         while (true) {
-            String msg = pollInterfaceMessages("");
+            msg = pollInterfaceMessages("");
             if (msg == null) { continue; }
 
             // Process Card Data
@@ -78,11 +96,13 @@ public class hub {
             case "Meter"      -> msg = dispensingUnit.getFuelPurchased();
             case "Hose-Attached" -> msg = hoseSensors.isHoseConnected();
             case "Hose-Tank"     -> msg = hoseSensors.isTankFull();
+            case "Screen"          -> msg = customer.getScreenData();
             case "Card"          -> msg = customer.getCardData();
             default              -> msg = pollInterfaceMessages();
         }
 
         if (inactivityTimeout(msg)) { return "Inactivity Timeout"; }
+        if(msg != null){ System.out.println("RECIEVING: " + msg); }
 
         return msg;
     }
@@ -94,6 +114,7 @@ public class hub {
         if (msg == null) msg = dispensingUnit.getFuelPurchased();
         if (msg == null) msg = hoseSensors.isTankFull();
         if (msg == null) msg = hoseSensors.isHoseConnected();
+        if (msg == null) msg = customer.getScreenData();
         if (msg == null) msg = customer.getCardData();
 
         if (msg == null) {
@@ -101,6 +122,7 @@ public class hub {
             if (++counter >= 100) { customer.display(UI_WELCOME); counter = 0; }
         } else {
             counter = 0;
+            System.out.println("RECIEVING: " + msg);
         }
         return msg; // may be null
     }
@@ -131,6 +153,7 @@ public class hub {
 
         if(msg.contains("Card-Approved.")){
             customer.sendCardApproved(); // card approved
+            Thread.sleep(2000);
             customer.display(UI_SELECT_FUEL); // select fuel screen
         } else if(msg.contains("Card-Denied.")){
             customer.sendCardDenied(); // card denied

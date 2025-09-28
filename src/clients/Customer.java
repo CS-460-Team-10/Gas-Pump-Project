@@ -26,6 +26,11 @@ public class Customer {
         return cardReaderPort.get();
     }
 
+    // Get the buffered screen data and clear it
+    public String getScreenData() {
+        return screenPort.get();
+    }
+
     // Send card approved to reader
     public void sendCardApproved() {
         cardReaderPort.send("C1");
