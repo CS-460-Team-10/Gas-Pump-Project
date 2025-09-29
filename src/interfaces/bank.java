@@ -17,8 +17,8 @@ public class bank {
     private boolean validCard(){
         balance = Math.random() * 100; // Balance of the card
 
-        // 90% chance of being valid
-        return Math.random() < 0.9;
+        // 90% chance of being valid - balance must be atleast $10
+        return balance > 10;
     }
 
     public void authorization() throws Exception {
@@ -40,10 +40,11 @@ public class bank {
                 }
 
                 // Charge card for transaction
-                if (msg.contains("Charge-Card. - ")) {
-                    msg = msg.trim().replace("Charge-Card. - ", "");
+                if (msg.contains("Transaction-Complete. Amount: $")) {
+                    msg = msg.trim().replace("Transaction-Complete. Amount: $", "");
                     balance -= Double.parseDouble(msg);
-                    System.out.println("Bank charged card. New balance: " + balance);
+                    String bal = String.format("$%.2f", balance);
+                    System.out.println("Bank charged card. New balance: " + bal);
                 }
             }
             Thread.sleep(50); // small delay not to spin

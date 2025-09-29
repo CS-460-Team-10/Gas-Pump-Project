@@ -4,11 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import javafx.util.Duration;
 import socketAPI.ioServer;
 import javafx.scene.control.Label;
 import helpers.imageLoader;
-import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
@@ -18,7 +16,7 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class flowMeter {
-    private final double FLOW_RATE = 0.44; // Gal/s
+    private final double FLOW_RATE = 0.04; // Gal/tenth-sec
     private double gallonsPumped;
     private double pricePerGallon = 1.00; // Default to 1 dollar
     private boolean pumping;
@@ -29,21 +27,10 @@ public class flowMeter {
     private String fuelChosen = "";
 
     public flowMeter(int connector) throws IOException {
-        this.gallonsPumped = 0.0;
-        this.pumping = false;
+        gallonsPumped = 0.0;
+        pumping = false;
 
         api = new ioServer(connector);
-    }
-
-    // Starts pumping fuel
-    public void startPumping() {
-        pumping = true;
-        api.send(String.format("Pumping started. Price per gallon: $%.2f", pricePerGallon));
-    }
-    // Stops pumping fuel
-    public void stopPumping() {
-        pumping = false;
-        api.send(String.format("Pump stopped. Total gallons: %.2f" + ", Cost: $%.2f", gallonsPumped, getTotalCost()));
     }
 
     /**
@@ -53,28 +40,23 @@ public class flowMeter {
      */
     public void flow(double gallons) {
         if(pumping) {
-            this.gallonsPumped += gallons;
-            api.send(String.format("Flow update: %.2f " + "gallons pumped.", gallonsPumped));
+            gallonsPumped += gallons;
         }
     }
     // gets total gallons being pumped
     public double getGallonsPumped() {
-        return this.gallonsPumped;
+        return gallonsPumped;
     }
     // get total cost
     public double getTotalCost() {
-        return this.gallonsPumped * pricePerGallon;
-    }
-    // check message from the ioPort (e.g. control signals).
-    public String checkMessage() throws IOException {
-        return api.get();
+        return gallonsPumped * pricePerGallon;
     }
 
     // Selects fuel to flow in pump
     public void selectGrade(int i){
         fuelChosen = productList[i];
         System.out.println("Fuel Selected: " + fuelChosen);
-        String[] choice = fuelChosen.split("-"+1);
+        String[] choice = fuelChosen.split("-", 2);
         pricePerGallon = Double.parseDouble(choice[1].trim());
     }
 
@@ -120,58 +102,63 @@ public class flowMeter {
             new Thread(() -> {
                 try {
                     meter = new flowMeter(6002);
-                    boolean isOn = false;
 
                     while (true) {
-                        String msg = meter.checkMessage();
+                        String msg = meter.api.get();
 
                         if (msg != null && !msg.isEmpty()) {
 
-                            // Turn on/off meter
-                            if (msg.contains("FM1") && !isOn) {
-                                isOn = true;
+                            // Message Interpretations
+                            if (msg.contains("FM1")) {
                                 System.out.println("Meter turning ON");
-                                meter.startPumping();
-                                Platform.runLater(() -> {
-                                    meterView.setImage(img.imageList.get(4));
-                                    fuelCostLabel.setText("00.00-Gal");
-                                });
-                            } else if (msg.contains("FM0") && isOn) {
-                                isOn = false;
-                                System.out.println("Meter turning OFF");
-                                meter.stopPumping();
-                                meter.gallonsPumped = 0.0; // reset between sessions
+                                Platform.runLater(() -> { fuelCostLabel.setText("00.00-Gal"); });
 
-                                Platform.runLater(() -> {
-                                    meterView.setImage(img.imageList.get(3));
-                                    PauseTransition p = new PauseTransition(Duration.millis(5000));
-                                    p.setOnFinished(ev -> fuelCostLabel.setText(""));
-                                    p.play();
-                                });
+                            } else if (msg.contains("FM0")) {
+                                System.out.println("Meter turning OFF");
+                                meter.gallonsPumped = 0.0; // reset between sessions
+                                Platform.runLater(() -> { fuelCostLabel.setText(""); });
+
+                            } else if(msg.contains("P1")){ // fuel flowing
+                                meter.pumping = true;
+                                Platform.runLater(() -> { meterView.setImage(img.imageList.get(4)); });
+
+                            } else if(msg.contains("P0")){ // fuel stop flowing
+                                meter.pumping = false;
+                                double fuelPurchased = meter.pricePerGallon * meter.getGallonsPumped();
+                                fuelPurchased = Math.round(fuelPurchased * 100.0) / 100.0;
+                                String amount = String.format("%.2f", fuelPurchased);
+                                Platform.runLater(() -> { meterView.setImage(img.imageList.get(3)); });
+                                meter.api.send("Transaction-Complete. Amount: $" + amount);
+
                             } else if(msg.contains("Fuel-Grade. - ")){
+                                System.out.println(msg);
                                 msg.replace("Product-List. - ", "");
                                 msg.replace("[\\d-]", "");
+                                System.out.println(msg);
                                 int i = 0;
                                 for (String product : meter.productList) {
                                     i++;
-                                    if(product.contains(msg));
-                                    meter.selectGrade(i);
+                                    System.out.println(product + "  |||  " + msg);
+                                    if(msg.contains(product)){
+                                        meter.selectGrade(i);
+                                        break;
+                                    }
                                 }
                             } else if(msg.contains("Product-List. - ")){
                                 msg = msg.replace("Product-List. - ", "");
                                 System.out.println("Product-List: " + msg);
                                 meter.productList = msg.split(":");
-                            }
+                            } 
                         }
 
                         // Simulate flow and update label if ON
-                        if (isOn) {
+                        if (meter.pumping) {
                             meter.flow(meter.FLOW_RATE);
                             double g = meter.getGallonsPumped();
                             String gal = String.format("%.2f-Gal", g);
                             Platform.runLater(() -> fuelCostLabel.setText(gal));
                             meter.api.send("Gal Pumped: " + String.format("%.2f", g));
-                            Thread.sleep(1000); // Pause per second to flow x-gal/sec
+                            Thread.sleep(100); // Pause per second to flow x-gal/tenth-sec
                         }
                     }
                 } catch (Exception e) {

@@ -202,15 +202,18 @@ public class screen {
                 if (token.isBlank()) continue;
                 String[] settings = token.split("/");
 
-                // TEXT: t01/s1B/f1/c5/"..."
                 if (token.charAt(0) == 't') {
-                    String id = settings[0];               // e.g., "t01", "t23"
+                    String id = settings[0];
                     int fieldNum = Character.getNumericValue(id.charAt(1));
                     boolean combinedField = id.length() > 2 && Character.isDigit(id.charAt(2));
 
                     if (fieldNum % 2 == 0) wasCombined = false;      // reset on even
                     int rowNum = fieldNum / 2;
                     horizontal row = hList.get(rowNum);
+
+                    char c = token.charAt(1);
+                    boolean isOdd = Character.isDigit(c) && ((c - '0') % 2 == 1);
+                    if(isOdd){ wasCombined = false;}
 
                     if (combinedField) {
                         wasCombined = true;
@@ -224,8 +227,7 @@ public class screen {
                     continue;
                 }
 
-                // BUTTON PRELUDE / SEQUENCER: "bp" or "bps/2b3"
-                if (token.equals("bp")) {                 // plain "bp" → no sequencer
+                if (token.equals("bp")) {
                     sequencer = false;
                     sequenceLength = 0;
                     sequenceConfirmId = -1;
@@ -233,12 +235,12 @@ public class screen {
                     buttonIDs.clear();
                     continue;
                 }
-                if (token.startsWith("bps/")) {           // e.g., "bps/2b3"
-                    String spec = token.substring(4);     // "2b3"
+                if (token.startsWith("bps/")) {
+                    String spec = token.substring(4);
                     int b = spec.indexOf('b');
                     if (b > 0 && b + 1 < spec.length()) {
-                        sequenceLength   = Integer.parseInt(spec.substring(0, b));     // 2
-                        sequenceConfirmId = Integer.parseInt(spec.substring(b + 1));   // 3
+                        sequenceLength   = Integer.parseInt(spec.substring(0, b));
+                        sequenceConfirmId = Integer.parseInt(spec.substring(b + 1));
                         sequencer = true;
                         buttonSequence.clear();
                         buttonIDs.clear();

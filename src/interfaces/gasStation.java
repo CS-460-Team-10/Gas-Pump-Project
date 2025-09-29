@@ -8,7 +8,7 @@ import socketAPI.ioServer;
 public class gasStation {
     private ioServer api; // communcation api
     // price list for all fuel types, made them up, although unleaded is pretty compareable with acutal NM gas prices
-    private String[] prices = {"Unleaded:3.25", "Premium:3.75", "PremiumPlus:4.00", "Gasoline:3.50"};
+    private String[] prices = {"Unleaded:3.25", "Premium:3.75", "Premium Plus:4.00", "Gasoline:3.50"};
 
     public gasStation(int connector) throws Exception {
         // open the device on port

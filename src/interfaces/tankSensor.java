@@ -5,24 +5,52 @@ import socketAPI.ioServer;
 
 public class tankSensor {
     private final ioServer api;
-    private volatile boolean tankFull = false;
+    private boolean tankFull = false;
+    private double fuelStartLevel;
+    private double maxFuel;
 
     // Start the tank sensor server on the given port (e.g., 6005)
     public tankSensor(int port) throws IOException {
-        this.api = new ioServer(port);
+        api = new ioServer(port);
         // Optionally announce initial state:
-        api.send("Tank-Not-Full.");
+        tankFull = false;
+        maxFuel = 12.0;
+        fuelStartLevel = Math.random()*6.0;
+        System.out.println("Max Fuel Capacity: " + this.maxFuel);
+        System.out.println("Current Fuel Level: " + this.fuelStartLevel);
 
         reading();
     }
 
     private void reading(){
         String msg = null;
+        double currentFuelLevel = fuelStartLevel;
         
         while(true){
             msg = api.get();
 
             if (msg != null && !msg.isEmpty()) {
+
+                if(msg.contains("Gal Pumped: ")){
+                    String[] tokens = msg.split(":");
+                    if (tokens.length > 1) {
+                        try {
+                            double fuelBought = Double.parseDouble(tokens[1].trim());
+                            currentFuelLevel = fuelBought + fuelStartLevel;
+                            if(currentFuelLevel >= maxFuel) { 
+                                tankFull = true; 
+                                api.send("Tank-Full."); 
+
+                                // Reset simulate next fuel tank
+                                fuelStartLevel = Math.random()*6.0;
+                                tankFull = false; 
+                            }
+                            System.out.println("Fuel Level updated: " + String.format("%.2f", currentFuelLevel) + " gallons");
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error parsing fuel amount from message: " + msg);
+                        }
+                    }
+                }
             }
         }
     }

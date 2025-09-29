@@ -26,15 +26,18 @@ public class DispensingUnit {
     // Send toggle to the GasPump server
     public void turnPumpOn() {
         gasPumpPort.send("P1");
+        flowMeterPort.send("P1");
     }
 
     public void turnPumpOff() {
         gasPumpPort.send("P0");
+        flowMeterPort.send("P0");
     }
 
     // Send grade selection to the GasPump server
     public void sendGradeSelection(String msg) {
         gasPumpPort.send(msg);
+        flowMeterPort.send(msg);
     }
 
     // Send fuel products to flow meter and pump

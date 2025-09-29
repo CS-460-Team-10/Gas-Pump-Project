@@ -12,9 +12,6 @@ import socketAPI.ioServer;
 public class hose {
     private boolean attached;
     private final ioServer api;
-    private boolean tankFull;
-    private double fuelLevel;
-    private double maxFuel;
 
     /**
      * Constructor to initialize the hose device.
@@ -23,11 +20,6 @@ public class hose {
      */
     public hose(int port) throws IOException {
         this.attached = false;
-        this.tankFull = false;
-        this.maxFuel = 12.0;
-        this.fuelLevel = Math.random()*6.0;
-        System.out.println("Max Fuel Capacity: " + this.maxFuel);
-        System.out.println("Current Fuel Level: " + this.fuelLevel);
         this.api = new ioServer(port);
         System.out.println("Hose is up: " + port);
 
@@ -38,8 +30,7 @@ public class hose {
      * @param sensorAttached boolean from the sensor that indicates if the hose is attached.
      * @param sensorTankFull boolean from the sensor that indicates if the tank is full
      */
-    public void updateSenor(boolean sensorAttached, boolean sensorTankFull) {
-
+    public void updateSenor(boolean sensorAttached) {
         // checks if the hose is attached
         if (sensorAttached && !attached) {
             attached = true;
@@ -49,16 +40,6 @@ public class hose {
             attached = false;
             System.out.println("Hose detached");
             api.send("Hose-Detached.");
-        }
-
-        // checks the status of the tank
-        if (sensorTankFull && !tankFull) {
-            tankFull = true;
-            System.out.println("Tank Full");
-            api.send("Tank Full");
-        } else if (!sensorTankFull && tankFull) {
-            tankFull = false;
-            api.send("Tank is not full");
         }
     }
 
@@ -81,46 +62,21 @@ public class hose {
             hoseView.setSmooth(true);
             hoseView.setPickOnBounds(true);
 
-            new Thread(() -> {
-                try {
-                    hose = new hose(6004);
-
-                    while (true) {
-                        String msg = hose.api.get();
-
-                        if (msg != null && !msg.isEmpty()) {
-                            if(msg.contains("Gal Pumped:")){
-                                String[] tokens = msg.split(":");
-                                if (tokens.length > 1) {
-                                    try {
-                                        double fuelBought = Double.parseDouble(tokens[3].trim());
-                                        hose.fuelLevel += fuelBought;
-                                        System.out.println("Fuel Level updated: " + String.format("%.2f", hose.fuelLevel) + " gallons");
-                                    } catch (NumberFormatException e) {
-                                        System.err.println("Error parsing fuel amount from message: " + msg);
-                                    }
-                                }
-                            }
-                        }
-
-                        if(hose.fuelLevel >= hose.maxFuel){ // Tank full
-                            hose.updateSenor(true, true);
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }, "Hose-Conn").start();
+            try {
+                hose = new hose(6004);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             final boolean[] toggled = {false};
             hoseView.setOnMouseClicked(e -> {
                 toggled[0] = !toggled[0];
                 if (toggled[0]) {
                     hoseView.setImage(img.imageList.get(6));
-                    hose.updateSenor(true, hose.tankFull);
+                    hose.updateSenor(true);
                 } else {
                     hoseView.setImage(img.imageList.get(5));
-                    hose.updateSenor(false, hose.tankFull);
+                    hose.updateSenor(false);
                 }
             });
 

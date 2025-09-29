@@ -24,6 +24,11 @@ public class HoseSensors {
         return tankFullnessSensorPort.get();
     }
 
+    // Check tank fullness from server
+    public void sendFuelFlowed(String msg) {
+        tankFullnessSensorPort.send(msg);
+    }
+
     // Shutdown
     public void close() throws IOException {
         hosePort.close();

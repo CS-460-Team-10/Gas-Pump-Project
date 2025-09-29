@@ -13,13 +13,13 @@ public class hub {
     private final String UI_WELCOME =
         "bp:b0/a0:b1/a0:b2/a0:b3/a0:b4/a0:b5/a0:b6/a0:b7/a0:b8/a0:b9/a0:" + // Button config
         "t01/s1B/f1/c5/\"Welcome!\":t23/s3R/f1/c5/\"Use the card reader to begin your transaction.\":t45/s1B/f1/c5/\"*\""; // Text config
-    private String UI_SELECT_FUEL;
+    private String UI_SELECT_FUEL; // Defined later after the gas station provides the product list and prices
     private final String UI_ATTACH_HOSE =
         "bp:b0/a0:b1/a0:b2/a0:b3/a0:b4/a0:b5/a0:b6/a0:b7/a0:b8/a0:b9/a0:" +
         "t23/s2R/f1/c5/\"Attach the hose to your vehicle's \\n       gas tank to begin fueling.\":t45/s1B/f1/c5/\"*\"";
     private final String UI_FUELING =
-        "bp:b0/a0:b1/a0:b2/a0:b3/a0:b4/a0:b5/a0:b6/a0:b7/a0:b8/a0:b9/a0:" +
-        "t23/s2R/f1/c5/\"Fueling in progress...\":t45/s1B/f1/c5/\"*\"";
+        "bp:b0/a0:b1/a0:b2/a0:b3/a0:b4/a0:b5/a0:b6/a0:b7/a1:b8/a0:b9/a0:" +
+        "t23/s2R/f1/c5/\"Fueling in progress...\":t45/s1B/f1/c5/\"*\":t7/s3I/f1/c5/\"STOP\"";
     private final String UI_FINAL =
         "bp:b0/a0:b1/a0:b2/a0:b3/a0:b4/a0:b5/a0:b6/a0:b7/a0:b8/a0:b9/a0:" +
         "t01/s2B/f1/c5/\"Transaction complete.\":t45/s3I/f1/c5/\"Thank you!\":t67/s1B/f1/c5/\"*\"";
@@ -57,7 +57,7 @@ public class hub {
             ProductList = msg.split(":");
 
             UI_SELECT_FUEL = "bps/2b3:b0/a0:b1/a0:b2/a1:b3/a1:b4/a1:b5/a0:b6/a1:b7/a0:b8/a1:b9/a0:" +
-                            "t01/s2R/f1/c5/\"Payment approved. Select fuel type:\":t2/s3I/f1/c5/\"" + ProductList[0] + "\":"
+                            "t01/s2R/f1/c5/\"Payment approved. Select fuel type ($)::\":t2/s3I/f1/c5/\"" + ProductList[0] + "\":"
                         + "t3/s3R/f1/c5/\"Confirm\":t4/s3I/f1/c5/\"" + ProductList[1] + "\":t6/s3I/f1/c5/\"" + ProductList[2] + 
                         "\":t8/s3I/f1/c5/\"" + ProductList[3] + "\"";
         }
@@ -78,9 +78,11 @@ public class hub {
             // Process Hose Attachment
             } else if (msg.contains("Hose-Attached.") && customer.screenState.equals(UI_ATTACH_HOSE)) {
                 processHoseAttachment();
+            } else if(msg.contains("Gal Pumped: ")){
+                hoseSensors.sendFuelFlowed(msg);
 
             // Process End of Transaction
-            } else if ((msg.contains("Hose-Detached.") || msg.contains("Tank-Full.") || msg.contains("Emergency-Stop.")) && customer.screenState.equals(UI_FUELING)) {
+            } else if ((msg.contains("Hose-Detached.") || msg.contains("Tank-Full.") || msg.contains("bp7" /*Stop Button*/)) && customer.screenState.equals(UI_FUELING)) {
                 processEndOfTransaction();
             }
         }
@@ -111,10 +113,10 @@ public class hub {
     private String pollInterfaceMessages() throws InterruptedException {
         String msg = gasStation.getFromStation();
         if (msg == null) msg = paymentSystem.getFromBank();
-        if (msg == null) msg = dispensingUnit.getFuelPurchased();
+        if (msg == null) msg = customer.getScreenData();
         if (msg == null) msg = hoseSensors.isTankFull();
         if (msg == null) msg = hoseSensors.isHoseConnected();
-        if (msg == null) msg = customer.getScreenData();
+        if (msg == null) msg = dispensingUnit.getFuelPurchased();
         if (msg == null) msg = customer.getCardData();
 
         if (msg == null) {
@@ -167,33 +169,31 @@ public class hub {
     }
 
     // Process hose attachment
-    private void processHoseAttachment() {
+    private void processHoseAttachment() throws InterruptedException {
         customer.display(UI_FUELING);
         dispensingUnit.turnMeterOn();
+        Thread.sleep(3000);
         dispensingUnit.turnPumpOn(); // Start fueling
     }
 
     // Process end of transaction
     private void processEndOfTransaction() throws InterruptedException {
         dispensingUnit.turnPumpOff();
+        Thread.sleep(3000); // display final screen and amount fueled for few seconds
         customer.display(UI_FINAL);
-        Thread.sleep(5000); // display final screen and amount fueled for few seconds
-        dispensingUnit.turnMeterOff();
 
         String msg = null;
         while (msg == null) { msg = pollInterfaceMessages("Meter"); } // get final amount fueled
         if (msg.contains("Inactivity Timeout")) { System.out.println("Error: Could not determine sale amount. Exiting..."); System.exit(1); } // critical error - exits
 
-        paymentSystem.sendToBank("Charge-Card. - " + msg);
-
-        while (msg == null) { msg = pollInterfaceMessages("Bank"); } // get charge approval
-        if (msg.contains("Inactivity Timeout")) { System.out.println("Error: Could not determine sale amount. Exiting..."); System.exit(1); } // critical error - exits
-
-        gasStation.sendToStation("Transaction complete. Amount: " + msg);
+        paymentSystem.sendToBank(msg);
+        gasStation.sendToStation(msg);
+        Thread.sleep(5000);
+        dispensingUnit.turnMeterOff();
         customer.display(UI_WELCOME);
     }
 
-
+    // Close all connections
     public void close() {
         try { customer.close(); } catch (IOException ignored) {}
         try { dispensingUnit.close(); } catch (IOException ignored) {}
