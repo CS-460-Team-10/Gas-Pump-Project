@@ -9,7 +9,7 @@ public class DispensingUnit {
 
     // Customer connects to the FlowMeter and GasPump servers
     public DispensingUnit(String flowMeterHost, int flowMeterPortNum,
-                    String gasPumpHost, int gasPumpPortNum) throws IOException {
+        String gasPumpHost, int gasPumpPortNum) throws IOException {
         this.flowMeterPort = new ioPort(flowMeterHost, flowMeterPortNum);
         this.gasPumpPort = new ioPort(gasPumpHost, gasPumpPortNum);
     }
@@ -41,7 +41,7 @@ public class DispensingUnit {
     }
 
     // Send fuel products to flow meter and pump
-    public void sendProductList(String msg){
+    public void sendProductList(String msg) {
         gasPumpPort.send(msg);
         flowMeterPort.send(msg);
     }

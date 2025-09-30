@@ -9,7 +9,7 @@ public class HoseSensors {
 
     // HoseSensors connects to the hose and tank fullness sensor servers
     public HoseSensors(String hoseHost, int hosePortNum,
-                    String tankFullnessSensorHost, int tankFullnessSensorPortNum) throws IOException {
+        String tankFullnessSensorHost, int tankFullnessSensorPortNum) throws IOException {
         this.hosePort = new ioPort(hoseHost, hosePortNum);
         this.tankFullnessSensorPort = new ioPort(tankFullnessSensorHost, tankFullnessSensorPortNum);
     }

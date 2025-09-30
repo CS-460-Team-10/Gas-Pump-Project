@@ -89,9 +89,9 @@ public class gasStation {
             StringBuilder sb = new StringBuilder("Product-List. - ");
 
             for (int i = 0; i < productFields.length; i++) {
-                String[] kv = productFields[i].getText().split(":"); // e.g. ["Unleaded","3.25"]
+                String[] kv = productFields[i].getText().split(":");
                 String grade = kv[0].trim();
-                String price = kv.length > 1 ? kv[1].trim() : "1.00";
+                String price = kv.length > 1 ? kv[1].trim() : "1.00"; // default to $1.00
                 sb.append(grade).append('-').append(price);
 
                 if (i < productFields.length - 1) {

@@ -137,18 +137,25 @@ public class flowMeter {
                                 });
                                 meter.api.send("Transaction-Complete. Amount: $" + amount);
 
-                            } else if (msg.contains("Fuel-Grade. - ")) {
-                                System.out.println(msg);
-                                msg.replace("Product-List. - ", "");
-                                msg.replace("[\\d-]", "");
-                                System.out.println(msg);
-                                int i = 0;
-                                for (String product: meter.productList) {
-                                    i++;
-                                    System.out.println(product + "  |||  " + msg);
-                                    if (msg.contains(product)) {
-                                        meter.selectGrade(i);
-                                        break;
+                            } else if (msg.startsWith("Fuel-Grade. - ")) {
+                                // what the user picked from the UI
+                                String sel = msg.substring("Fuel-Grade. - ".length()).trim();
+
+                                // selection already includes price
+                                if (sel.contains("-")) {
+                                    String[] kv = sel.split("-", 2);
+                                    meter.fuelChosen = sel;
+                                    meter.pricePerGallon = Double.parseDouble(kv[1].trim());
+                                    System.out.println("Fuel Selected: " + meter.fuelChosen + " @ " + meter.pricePerGallon);
+                                } else {
+                                    // selection is just the grade
+                                    for (int i = 0; i < meter.productList.length; i++) {
+                                        String[] kv = meter.productList[i].split("-", 2); // ["Unleaded","3.25"]
+                                        String grade = kv[0].trim();
+                                        if (grade.equalsIgnoreCase(sel)) {
+                                            meter.selectGrade(i); // 0-based index
+                                            break;
+                                        }
                                     }
                                 }
                             } else if (msg.contains("Product-List. - ")) {

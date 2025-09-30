@@ -10,7 +10,7 @@ public class Customer {
 
     // Customer connects to the Screen and CardReader servers
     public Customer(String screenHost, int screenPortNum,
-                    String cardReaderHost, int cardReaderPortNum) throws IOException {
+        String cardReaderHost, int cardReaderPortNum) throws IOException {
         this.screenPort = new ioPort(screenHost, screenPortNum);
         this.cardReaderPort = new ioPort(cardReaderHost, cardReaderPortNum);
     }
@@ -35,7 +35,7 @@ public class Customer {
     public void sendCardApproved() {
         cardReaderPort.send("C1");
     }
-    
+
     // Send card denied to reader
     public void sendCardDenied() {
         cardReaderPort.send("C0");

@@ -72,7 +72,7 @@ public class bank {
             primaryStage.setTitle("Bank");
             primaryStage.show();
 
-            // process connections
+            // process connection
             new Thread(() -> {
                 try {
                     new bank(6006);

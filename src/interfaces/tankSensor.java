@@ -9,7 +9,7 @@ public class tankSensor {
     private double fuelStartLevel;
     private double maxFuel;
 
-    // Start the tank sensor server on the given port (e.g., 6005)
+    // Start the tank sensor server on the given port
     public tankSensor(int port) throws IOException {
         api = new ioServer(port);
         // Optionally announce initial state:
