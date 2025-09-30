@@ -3,6 +3,83 @@
   "configurations": [
     {
       "type": "java",
+      "name": "connectTest",
+      "request": "launch",
+      "mainClass": "helpers.connectTest",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
+      "name": "cardReader",
+      "request": "launch",
+      "mainClass": "interfaces.cardReader",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
+      "name": "tankSensor",
+      "request": "launch",
+      "mainClass": "interfaces.tankSensor",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
+      "name": "hose",
+      "request": "launch",
+      "mainClass": "interfaces.hose",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
+      "name": "pump",
+      "request": "launch",
+      "mainClass": "interfaces.pump",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
+      "name": "bank",
+      "request": "launch",
+      "mainClass": "interfaces.bank",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
+      "name": "CreditCardReader",
+      "request": "launch",
+      "mainClass": "interfaces.CreditCardReader",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
+      "name": "flowMeter",
+      "request": "launch",
+      "mainClass": "interfaces.flowMeter",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
+      "name": "gasStation",
+      "request": "launch",
+      "mainClass": "interfaces.gasStation",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
+      "name": "Hose",
+      "request": "launch",
+      "mainClass": "interfaces.Hose",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
+      "name": "screen",
+      "request": "launch",
+      "mainClass": "interfaces.screen",
+      "projectName": "Gas-Pump-Project_c33270ba"
+    },
+    {
+      "type": "java",
       "name": "testImageSort",
       "request": "launch",
       "mainClass": "helpers.testImageSort",
