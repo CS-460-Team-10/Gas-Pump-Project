@@ -39,7 +39,7 @@ public class flowMeter {
      * @param gallons the amount of gallons being pumped.
      */
     public void flow(double gallons) {
-        if(pumping) {
+        if (pumping) {
             gallonsPumped += gallons;
         }
     }
@@ -53,7 +53,7 @@ public class flowMeter {
     }
 
     // Selects fuel to flow in pump
-    public void selectGrade(int i){
+    public void selectGrade(int i) {
         fuelChosen = productList[i];
         System.out.println("Fuel Selected: " + fuelChosen);
         String[] choice = fuelChosen.split("-", 2);
@@ -87,7 +87,6 @@ public class flowMeter {
                 "-fx-font-weight: bold;" +
                 "-fx-font-size: 14px;"
             );
-            
 
             root = new StackPane(meterView, fuelCostLabel);
             StackPane.setAlignment(fuelCostLabel, Pos.CENTER);
@@ -111,44 +110,52 @@ public class flowMeter {
                             // Message Interpretations
                             if (msg.contains("FM1")) {
                                 System.out.println("Meter turning ON");
-                                Platform.runLater(() -> { fuelCostLabel.setText("00.00-Gal"); });
+                                Platform.runLater(() -> {
+                                    fuelCostLabel.setText("00.00-Gal");
+                                });
 
                             } else if (msg.contains("FM0")) {
                                 System.out.println("Meter turning OFF");
                                 meter.gallonsPumped = 0.0; // reset between sessions
-                                Platform.runLater(() -> { fuelCostLabel.setText(""); });
+                                Platform.runLater(() -> {
+                                    fuelCostLabel.setText("");
+                                });
 
-                            } else if(msg.contains("P1")){ // fuel flowing
+                            } else if (msg.contains("P1")) { // fuel flowing
                                 meter.pumping = true;
-                                Platform.runLater(() -> { meterView.setImage(img.imageList.get(4)); });
+                                Platform.runLater(() -> {
+                                    meterView.setImage(img.imageList.get(4));
+                                });
 
-                            } else if(msg.contains("P0")){ // fuel stop flowing
+                            } else if (msg.contains("P0")) { // fuel stop flowing
                                 meter.pumping = false;
                                 double fuelPurchased = meter.pricePerGallon * meter.getGallonsPumped();
                                 fuelPurchased = Math.round(fuelPurchased * 100.0) / 100.0;
                                 String amount = String.format("%.2f", fuelPurchased);
-                                Platform.runLater(() -> { meterView.setImage(img.imageList.get(3)); });
+                                Platform.runLater(() -> {
+                                    meterView.setImage(img.imageList.get(3));
+                                });
                                 meter.api.send("Transaction-Complete. Amount: $" + amount);
 
-                            } else if(msg.contains("Fuel-Grade. - ")){
+                            } else if (msg.contains("Fuel-Grade. - ")) {
                                 System.out.println(msg);
                                 msg.replace("Product-List. - ", "");
                                 msg.replace("[\\d-]", "");
                                 System.out.println(msg);
                                 int i = 0;
-                                for (String product : meter.productList) {
+                                for (String product: meter.productList) {
                                     i++;
                                     System.out.println(product + "  |||  " + msg);
-                                    if(msg.contains(product)){
+                                    if (msg.contains(product)) {
                                         meter.selectGrade(i);
                                         break;
                                     }
                                 }
-                            } else if(msg.contains("Product-List. - ")){
+                            } else if (msg.contains("Product-List. - ")) {
                                 msg = msg.replace("Product-List. - ", "");
                                 System.out.println("Product-List: " + msg);
                                 meter.productList = msg.split(":");
-                            } 
+                            }
                         }
 
                         // Simulate flow and update label if ON
@@ -175,4 +182,3 @@ public class flowMeter {
         Application.launch(flowMeter.FlowmeterGraphics.class, args);
     }
 }
-

@@ -29,7 +29,7 @@ public class pump {
      * that will turn on the pump.
      */
     public synchronized void pumpOn() {
-        if(!pumping) {
+        if (!pumping) {
             pumping = true;
             System.out.println("Pump is On - pumping gas");
             api.send("Pump ON");
@@ -48,37 +48,31 @@ public class pump {
         }
     }
 
-    public void idle(){
+    public void idle() {
         String msg;
 
-        while(true){
+        while (true) {
             msg = api.get();
 
             if (msg != null && !msg.isEmpty()) {
-                if(msg.contains("Product-List. - ")){
+                if (msg.contains("Product-List. - ")) {
                     msg = msg.replace("Product-List. - ", "");
                     msg = msg.replace("[\\d-]", "");
                     System.out.println("Product-List: " + msg);
                     productList = msg.split(":");
-                }
-
-                else if(msg.contains("Fuel-Grade. - ")){
+                } else if (msg.contains("Fuel-Grade. - ")) {
                     msg.replace("Product-List. - ", "");
                     msg.replace("[\\d-]", "");
                     int i = 0;
-                    for (String product : productList) {
-                        if(msg.contains(product)){
+                    for (String product: productList) {
+                        if (msg.contains(product)) {
                             selectGrade(i);
                         }
                         i++;
                     }
-                }
-
-                else if(msg.contains("P1")){
+                } else if (msg.contains("P1")) {
                     pumpOn();
-                }
-
-                else if(msg.contains("P0")){
+                } else if (msg.contains("P0")) {
                     pumpOff();
                 }
             }
@@ -86,7 +80,7 @@ public class pump {
     }
 
     // Selects fuel to flow in pump
-    public void selectGrade(int i){
+    public void selectGrade(int i) {
         fuelChosen = productList[i];
         System.out.println("Fuel Selected: " + fuelChosen);
     }

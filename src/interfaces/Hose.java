@@ -68,7 +68,9 @@ public class hose {
                 e.printStackTrace();
             }
 
-            final boolean[] toggled = {false};
+            final boolean[] toggled = {
+                false
+            };
             hoseView.setOnMouseClicked(e -> {
                 toggled[0] = !toggled[0];
                 if (toggled[0]) {

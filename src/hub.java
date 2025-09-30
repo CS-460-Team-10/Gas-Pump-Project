@@ -35,7 +35,7 @@ public class hub {
     public hub() throws IOException {
 
         // Instantiate client objects *****(Must start all interfaces before running hub logic)*****                                    ************
-        this.customer  = new Customer("localhost", 6000, "localhost", 6001);
+        this.customer = new Customer("localhost", 6000, "localhost", 6001);
         this.dispensingUnit = new DispensingUnit("localhost", 6002, "localhost", 6003);
         this.hoseSensors = new HoseSensors("localhost", 6004, "localhost", 6005);
         this.paymentSystem = new PaymentSystem("localhost", 6006);
@@ -47,43 +47,60 @@ public class hub {
         // Initial welcome screen
         customer.display(UI_WELCOME);
 
-        // Get GasStation prices and fwd it to screen, pump, and flowmeter
+        // Get initial Gas Station prices and fwd it to screen, pump, and flowmeter
         String msg = null;
-        while (msg == null) { msg = pollInterfaceMessages("GasStation"); }
-        if (msg.contains("Inactivity Timeout")) { msg = null; return; }
-        else if(msg.contains("Product-List. - ")){
+        while (msg == null) {
+            msg = pollInterfaceMessages("GasStation");
+        }
+        if (msg.contains("Inactivity Timeout")) {
+            msg = null;
+            return;
+        } else if (msg.contains("Product-List. - ")) {
             dispensingUnit.sendProductList(msg);
             msg = msg.replace("Product-List. - ", "");
             ProductList = msg.split(":");
 
             UI_SELECT_FUEL = "bps/2b3:b0/a0:b1/a0:b2/a1:b3/a1:b4/a1:b5/a0:b6/a1:b7/a0:b8/a1:b9/a0:" +
-                            "t01/s2R/f1/c5/\"Payment approved. Select fuel type ($)::\":t2/s3I/f1/c5/\"" + ProductList[0] + "\":"
-                        + "t3/s3R/f1/c5/\"Confirm\":t4/s3I/f1/c5/\"" + ProductList[1] + "\":t6/s3I/f1/c5/\"" + ProductList[2] + 
-                        "\":t8/s3I/f1/c5/\"" + ProductList[3] + "\"";
+                "t01/s2R/f1/c5/\"Payment approved. Select fuel type ($)::\":t2/s3I/f1/c5/\"" + ProductList[0] + "\":" +
+                "t3/s3R/f1/c5/\"Confirm\":t4/s3I/f1/c5/\"" + ProductList[1] + "\":t6/s3I/f1/c5/\"" + ProductList[2] +
+                "\":t8/s3I/f1/c5/\"" + ProductList[3] + "\"";
         }
 
         // Main running loop
         while (true) {
             msg = pollInterfaceMessages("");
-            if (msg == null) { continue; }
+            if (msg == null) {
+                continue;
+            }
 
             // Process Card Data
             if (msg.contains("Card-No. - ") && customer.screenState.equals(UI_WELCOME)) {
                 processCard(msg);
 
-            // Process Fuel Selection
+                // Process Fuel Selection
             } else if (msg.contains("Fuel-Grade. - ") && customer.screenState.equals(UI_SELECT_FUEL)) {
                 processFuelSelection(msg);
 
-            // Process Hose Attachment
+                // Process Hose Attachment
             } else if (msg.contains("Hose-Attached.") && customer.screenState.equals(UI_ATTACH_HOSE)) {
                 processHoseAttachment();
-            } else if(msg.contains("Gal Pumped: ")){
+            } else if (msg.contains("Gal Pumped: ")) {
                 hoseSensors.sendFuelFlowed(msg);
 
-            // Process End of Transaction
-            } else if ((msg.contains("Hose-Detached.") || msg.contains("Tank-Full.") || msg.contains("bp7" /*Stop Button*/)) && customer.screenState.equals(UI_FUELING)) {
+                // Process End of Transaction
+            } else if ((msg.contains("Hose-Detached.") || msg.contains("Tank-Full.") || msg.contains("bp7" /*Stop Button*/ )) && customer.screenState.equals(UI_FUELING)) {
                 processEndOfTransaction();
+
+                // Process Product List Changes
+            } else if (msg.contains("Product-List. - ")) {
+                dispensingUnit.sendProductList(msg);
+                msg = msg.replace("Product-List. - ", "");
+                ProductList = msg.split(":");
+
+                UI_SELECT_FUEL = "bps/2b3:b0/a0:b1/a0:b2/a1:b3/a1:b4/a1:b5/a0:b6/a1:b7/a0:b8/a1:b9/a0:" +
+                    "t01/s2R/f1/c5/\"Payment approved. Select fuel type ($)::\":t2/s3I/f1/c5/\"" + ProductList[0] + "\":" +
+                    "t3/s3R/f1/c5/\"Confirm\":t4/s3I/f1/c5/\"" + ProductList[1] + "\":t6/s3I/f1/c5/\"" + ProductList[2] +
+                    "\":t8/s3I/f1/c5/\"" + ProductList[3] + "\"";
             }
         }
     }
@@ -93,18 +110,22 @@ public class hub {
         String msg = null;
 
         switch (desiredServer) {
-            case "GasStation" -> msg = gasStation.getFromStation();
-            case "Bank"       -> msg = paymentSystem.getFromBank();
-            case "Meter"      -> msg = dispensingUnit.getFuelPurchased();
-            case "Hose-Attached" -> msg = hoseSensors.isHoseConnected();
-            case "Hose-Tank"     -> msg = hoseSensors.isTankFull();
-            case "Screen"          -> msg = customer.getScreenData();
-            case "Card"          -> msg = customer.getCardData();
-            default              -> msg = pollInterfaceMessages();
+        case "GasStation" -> msg = gasStation.getFromStation();
+        case "Bank" -> msg = paymentSystem.getFromBank();
+        case "Meter" -> msg = dispensingUnit.getFuelPurchased();
+        case "Hose-Attached" -> msg = hoseSensors.isHoseConnected();
+        case "Hose-Tank" -> msg = hoseSensors.isTankFull();
+        case "Screen" -> msg = customer.getScreenData();
+        case "Card" -> msg = customer.getCardData();
+        default -> msg = pollInterfaceMessages();
         }
 
-        if (inactivityTimeout(msg)) { return "Inactivity Timeout"; }
-        if(msg != null){ System.out.println("RECIEVING: " + msg); }
+        if (inactivityTimeout(msg)) {
+            return "Inactivity Timeout";
+        }
+        if (msg != null) {
+            System.out.println("RECIEVING: " + msg);
+        }
 
         return msg;
     }
@@ -121,7 +142,10 @@ public class hub {
 
         if (msg == null) {
             Thread.sleep(100);
-            if (++counter >= 100) { customer.display(UI_WELCOME); counter = 0; }
+            if (++counter >= 100) {
+                customer.display(UI_WELCOME);
+                counter = 0;
+            }
         } else {
             counter = 0;
             System.out.println("RECIEVING: " + msg);
@@ -133,7 +157,7 @@ public class hub {
     private boolean inactivityTimeout(String msg) throws InterruptedException {
         // Null message handling and inactivity timeout
         if (msg == null) {
-            Thread.sleep(100);  // avoid busy-waiting
+            Thread.sleep(100); // avoid busy-waiting
             counter += 1;
 
             if (counter >= 100) {
@@ -141,23 +165,30 @@ public class hub {
                 counter = 0;
                 return true;
             }
-        } else { counter = 0; }
+        } else {
+            counter = 0;
+        }
         return false;
     }
 
     // Process card data
-    private void processCard(String msg) throws InterruptedException{
+    private void processCard(String msg) throws InterruptedException {
         paymentSystem.sendToBank(msg); // send card data to bank
 
         msg = null;
-        while (msg == null) { msg = pollInterfaceMessages("Bank"); } // wait for bank response
-        if (msg.contains("Inactivity Timeout")) { msg = null; return; }
+        while (msg == null) {
+            msg = pollInterfaceMessages("Bank");
+        } // wait for bank response
+        if (msg.contains("Inactivity Timeout")) {
+            msg = null;
+            return;
+        }
 
-        if(msg.contains("Card-Approved.")){
+        if (msg.contains("Card-Approved.")) {
             customer.sendCardApproved(); // card approved
             Thread.sleep(2000);
             customer.display(UI_SELECT_FUEL); // select fuel screen
-        } else if(msg.contains("Card-Denied.")){
+        } else if (msg.contains("Card-Denied.")) {
             customer.sendCardDenied(); // card denied
         }
     }
@@ -183,8 +214,13 @@ public class hub {
         customer.display(UI_FINAL);
 
         String msg = null;
-        while (msg == null) { msg = pollInterfaceMessages("Meter"); } // get final amount fueled
-        if (msg.contains("Inactivity Timeout")) { System.out.println("Error: Could not determine sale amount. Exiting..."); System.exit(1); } // critical error - exits
+        while (msg == null) {
+            msg = pollInterfaceMessages("Meter");
+        } // get final amount fueled
+        if (msg.contains("Inactivity Timeout")) {
+            System.out.println("Error: Could not determine sale amount. Exiting...");
+            System.exit(1);
+        } // critical error - exits
 
         paymentSystem.sendToBank(msg);
         gasStation.sendToStation(msg);
@@ -195,22 +231,32 @@ public class hub {
 
     // Close all connections
     public void close() {
-        try { customer.close(); } catch (IOException ignored) {}
-        try { dispensingUnit.close(); } catch (IOException ignored) {}
-        try { hoseSensors.close(); } catch (IOException ignored) {}
-        try { paymentSystem.close(); } catch (IOException ignored) {}
-        try { gasStation.close(); } catch (IOException ignored) {}
+        try {
+            customer.close();
+        } catch (IOException ignored) {}
+        try {
+            dispensingUnit.close();
+        } catch (IOException ignored) {}
+        try {
+            hoseSensors.close();
+        } catch (IOException ignored) {}
+        try {
+            paymentSystem.close();
+        } catch (IOException ignored) {}
+        try {
+            gasStation.close();
+        } catch (IOException ignored) {}
     }
 
     public static void main(String[] args) throws Exception {
 
         hub hub = new hub();
 
-        try { 
-            hub.run(); 
+        try {
+            hub.run();
 
         } finally {
-             hub.close(); 
+            hub.close();
         }
     }
 }

@@ -1,57 +1,112 @@
 package interfaces;
 
-// this is the gas station server
-// role is only to tell hub what are the fuel prices and record how much cash is paid
+import java.io.IOException;
 
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
 import socketAPI.ioServer;
 
 public class gasStation {
-    private ioServer api; // communcation api
-    // price list for all fuel types, made them up, although unleaded is pretty compareable with acutal NM gas prices
-    private String[] prices = {"Unleaded:3.25", "Premium:3.75", "Premium Plus:4.00", "Gasoline:3.50"};
+    private ioServer api; // communication api
 
     public gasStation(int connector) throws Exception {
-        // open the device on port
         api = new ioServer(connector);
-        // send first price list to hub
-        sendPriceList();
-        // start the loop for gas station logic
-        Transactions();
     }
 
-    // Send product list
-    private void sendPriceList() {
-    StringBuilder sb = new StringBuilder("Product-List. - ");
-    for (int i = 0; i < prices.length; i++) {
-        String[] kv = prices[i].split(":");     // ["Unleaded","3.25"]
-        String grade = kv[0];
-        String price = kv.length > 1 ? kv[1] : "0";
-        sb.append(grade).append('-').append(price);
-        if (i < prices.length - 1) sb.append(':');  // pairs separated by ':'
-    }
-    api.send(sb.toString());
-    System.out.println("GasStation Sending: " + sb);
-}
+    public static class GasStationGraphics extends Application {
+        private gasStation station;
 
-    private void Transactions() throws Exception {
-        // main loop keep running
-        while (true) {
-            // get message from hub
-            String msg = api.get();
-            if (msg != null) {
-                System.out.println("GasStation Received: " + msg);
-                // if hub send cash-paid then log it
-                if (msg.contains("cash-paid(")) {
-                    String d = msg.substring(msg.indexOf("(") + 1, msg.length() - 1);
-                    System.out.println("Transaction recorded: $" + d);
+        private TextField[] productFields = new TextField[4];
+        private TextArea logArea;
+
+        @Override
+        public void start(Stage primaryStage) throws IOException {
+            // background connection loop
+            new Thread(() -> {
+                try {
+                    station = new gasStation(6007);
+                    sendPriceList();
+                    while (true) {
+                        String msg = station.api.get();
+                        if (msg != null && !msg.isEmpty()) {
+                            System.out.println("GasStation Received: " + msg);
+
+                            Platform.runLater(() ->
+                                logArea.appendText("Received: " + msg + "\n")
+                            );
+
+                            if (msg.contains("cash-paid(")) {
+                                String d = msg.substring(msg.indexOf("(") + 1, msg.length() - 1);
+                                System.out.println("Transaction recorded: $" + d);
+                                Platform.runLater(() ->
+                                    logArea.appendText("Transaction recorded: $" + d + "\n")
+                                );
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }, "Station-Conn").start();
+
+            // 4 fixed product fields
+            productFields[0] = new TextField("Unleaded:3.25");
+            productFields[1] = new TextField("Premium:3.75");
+            productFields[2] = new TextField("Premium Plus:4.00");
+            productFields[3] = new TextField("Gasoline:3.50");
+
+            Button sendBtn = new Button("Update Prices");
+            sendBtn.setOnAction(e -> sendPriceList());
+
+            VBox editor = new VBox(10,
+                new Label("Products:"),
+                productFields[0],
+                productFields[1],
+                productFields[2],
+                productFields[3],
+                sendBtn
+            );
+            editor.setPrefWidth(200);
+
+            // log area
+            logArea = new TextArea();
+            logArea.setEditable(false);
+
+            // put side by side
+            HBox root = new HBox(10, logArea, editor);
+
+            primaryStage.setScene(new Scene(root, 600, 200));
+            primaryStage.setTitle("Gas Station");
+            primaryStage.show();
+        }
+
+        private void sendPriceList() {
+            StringBuilder sb = new StringBuilder("Product-List. - ");
+
+            for (int i = 0; i < productFields.length; i++) {
+                String[] kv = productFields[i].getText().split(":"); // e.g. ["Unleaded","3.25"]
+                String grade = kv[0].trim();
+                String price = kv.length > 1 ? kv[1].trim() : "1.00";
+                sb.append(grade).append('-').append(price);
+
+                if (i < productFields.length - 1) {
+                    sb.append(':'); // separate each pair with :
                 }
             }
-            Thread.sleep(50); // small delay not to spin
+
+            String msg = sb.toString();
+            station.api.send(msg);
+            System.out.println("Sending: " + msg);
+            logArea.appendText("Sent: " + msg + "\n");
         }
     }
 
     public static void main(String[] args) throws Exception {
-        // start the gas station on connector 6 status port
-        new gasStation(6007);
+        Application.launch(gasStation.GasStationGraphics.class, args);
     }
 }

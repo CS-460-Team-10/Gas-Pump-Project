@@ -22,7 +22,7 @@ import socketAPI.ioServer;
 public class screen {
     private final ioServer api;
 
-    public screen(int connector) throws UnknownHostException, IOException { 
+    public screen(int connector) throws UnknownHostException, IOException {
         api = new ioServer(connector);
     }
 
@@ -32,15 +32,35 @@ public class screen {
     public static class screenGraphics extends Application {
         private screen display;
 
-        private ArrayList<horizontal> hList = new ArrayList<>();
-        private String[] textFont = { "Serif", "Times New Roman", "Courier New" }; // 3 Fonts Supported
-        private Color[] textColor = { Color.BLACK, Color.RED, Color.GREEN, Color.BLUE, Color.WHITE }; // 5 Text Colors Supported
+        private ArrayList < horizontal > hList = new ArrayList < > ();
+        private String[] textFont = {
+            "Serif",
+            "Times New Roman",
+            "Courier New"
+        }; // 3 Fonts Supported
+        private Color[] textColor = {
+            Color.BLACK,
+            Color.RED,
+            Color.GREEN,
+            Color.BLUE,
+            Color.WHITE
+        }; // 5 Text Colors Supported
         private Color myBlue = Color.web("#1e3a8a"); // Custom blue color
-        private Color[] screenColor = { Color.BLACK, Color.RED, Color.GREEN, myBlue, Color.WHITE }; // 5 Screen Colors Supported
-        private int[] textSize = { 30, 20, 15 }; // 3 Text Sizes Supported
+        private Color[] screenColor = {
+            Color.BLACK,
+            Color.RED,
+            Color.GREEN,
+            myBlue,
+            Color.WHITE
+        }; // 5 Screen Colors Supported
+        private int[] textSize = {
+            30,
+            20,
+            15
+        }; // 3 Text Sizes Supported
         private int hCount = 5; // Number of rows to create in the terminal
-        private ArrayList<Button> buttonSequence = new ArrayList<>();
-        private ArrayList<Integer> buttonIDs = new ArrayList<>();
+        private ArrayList < Button > buttonSequence = new ArrayList < > ();
+        private ArrayList < Integer > buttonIDs = new ArrayList < > ();
         private int sequenceConfirmId = -1;
         private boolean sequencer = false;
         private int sequenceLength = 0;
@@ -76,14 +96,14 @@ public class screen {
         }
 
         // Initialize the screen
-        private void initializeScreen(Stage screenStage){
+        private void initializeScreen(Stage screenStage) {
             VBox vertical = new VBox(3);
             vertical.setFillWidth(true); // Children stretch to VBox width
             vertical.setMaxWidth(Double.MAX_VALUE); // VBox fills Scene width
             vertical.setMaxHeight(Double.MAX_VALUE); // VBox fills Scene height
 
             // Create screen layout
-            for(int i = 1; i <= hCount; i++){
+            for (int i = 1; i <= hCount; i++) {
 
                 horizontal h = new horizontal(i);
                 h.bL.setStyle("-fx-background-color: gray; -fx-text-fill: black; -fx-font-weight: bold;");
@@ -98,9 +118,9 @@ public class screen {
             }
 
             String initialScreenColor = String.format("rgb(%d, %d, %d);",
-                (int) (screenColor[3].getRed() * 255),
-                (int) (screenColor[3].getGreen() * 255),
-                (int) (screenColor[3].getBlue() * 255));
+                (int)(screenColor[3].getRed() * 255),
+                (int)(screenColor[3].getGreen() * 255),
+                (int)(screenColor[3].getBlue() * 255));
             vertical.setStyle("-fx-background-color: " + initialScreenColor); // use array value
             Scene scene = new Scene(vertical, 600, 400);
             screenStage.setTitle("Gas Pump Terminal");
@@ -119,15 +139,14 @@ public class screen {
 
             // Initializes all horizontal entities in a single line (buttons & fields)
             private horizontal(int count) {
-                int leftID = (count-1)*2;
-                int rightID = leftID+1;
-                
+                int leftID = (count - 1) * 2;
+                int rightID = leftID + 1;
+
                 h = new HBox(10); // HBox to wrap everything into
 
                 bL = new Button();
                 bL.setOnAction(event -> {
-                    sendButtonData
-                    (bL, leftID);
+                    sendButtonData(bL, leftID);
                 });
 
                 tL = new Label();
@@ -136,8 +155,7 @@ public class screen {
 
                 bR = new Button();
                 bR.setOnAction(event -> {
-                    sendButtonData
-                    (bR, rightID);
+                    sendButtonData(bR, rightID);
                 });
 
                 // Wrap buttons and fields into HBox (In the order: Button, Field, Field, Field, Button)
@@ -168,24 +186,24 @@ public class screen {
                 bR.setMinWidth(80);
                 bR.setMaxHeight(80);
                 bR.setMinHeight(80);
-                
+
                 h.getChildren().addAll(bL, tL, tLR, tR, bR);
             }
         }
 
         // Send button data through api
         private void sendButtonData
-        (Button b, int id){
-            if(sequencer) buttonSequencer(b, id);
-            else{
-                System.out.println("SENDING: bp" + id);
-                display.api.send("bp" + id);
+            (Button b, int id) {
+                if (sequencer) buttonSequencer(b, id);
+                else {
+                    System.out.println("SENDING: bp" + id);
+                    display.api.send("bp" + id);
+                }
             }
-        }
 
         // Create a blank screen
-        public void blankScreen(){              
-            for(horizontal row : hList){
+        public void blankScreen() {
+            for (horizontal row: hList) {
                 row.tL.setText("");
                 row.tLR.setText("");
                 row.tR.setText("");
@@ -194,11 +212,11 @@ public class screen {
         }
 
         // Interpret markup message (Only pass in what is changing)
-        private void interpretMessage(String msg){
+        private void interpretMessage(String msg) {
             String[] tokens = msg.split(":");
             boolean wasCombined = false;
 
-            for (String token : tokens) {
+            for (String token: tokens) {
                 if (token.isBlank()) continue;
                 String[] settings = token.split("/");
 
@@ -207,13 +225,15 @@ public class screen {
                     int fieldNum = Character.getNumericValue(id.charAt(1));
                     boolean combinedField = id.length() > 2 && Character.isDigit(id.charAt(2));
 
-                    if (fieldNum % 2 == 0) wasCombined = false;      // reset on even
+                    if (fieldNum % 2 == 0) wasCombined = false; // reset on even
                     int rowNum = fieldNum / 2;
                     horizontal row = hList.get(rowNum);
 
                     char c = token.charAt(1);
                     boolean isOdd = Character.isDigit(c) && ((c - '0') % 2 == 1);
-                    if(isOdd){ wasCombined = false;}
+                    if (isOdd) {
+                        wasCombined = false;
+                    }
 
                     if (combinedField) {
                         wasCombined = true;
@@ -239,7 +259,7 @@ public class screen {
                     String spec = token.substring(4);
                     int b = spec.indexOf('b');
                     if (b > 0 && b + 1 < spec.length()) {
-                        sequenceLength   = Integer.parseInt(spec.substring(0, b));
+                        sequenceLength = Integer.parseInt(spec.substring(0, b));
                         sequenceConfirmId = Integer.parseInt(spec.substring(b + 1));
                         sequencer = true;
                         buttonSequence.clear();
@@ -269,34 +289,37 @@ public class screen {
         }
 
         // Configure text field
-        private void fieldConfig(Label t, String[] tokens){
-            int size = Character.getNumericValue(tokens[1].charAt(1))-1;
+        private void fieldConfig(Label t, String[] tokens) {
+            int size = Character.getNumericValue(tokens[1].charAt(1)) - 1;
             char style = tokens[1].charAt(2);
-            int font = Character.getNumericValue(tokens[2].charAt(1))-1;
-            int color = Character.getNumericValue(tokens[3].charAt(1))-1;
+            int font = Character.getNumericValue(tokens[2].charAt(1)) - 1;
+            int color = Character.getNumericValue(tokens[3].charAt(1)) - 1;
             String displayText = tokens[4].replace("\"", "").replace("\\n", "\n");
 
             t.setTextFill(textColor[color]);
             t.setFont(Font.font(textFont[font], textSize[size]));
-            if(style == 'B'){makeBold(t);}
-            else if(style == 'I') {makeItalic(t);}
+            if (style == 'B') {
+                makeBold(t);
+            } else if (style == 'I') {
+                makeItalic(t);
+            }
             t.setText(displayText);
         }
 
         // Configure button
-        private void buttonConfig(Button b, String[] tokens){
+        private void buttonConfig(Button b, String[] tokens) {
             boolean active = tokens[1].substring(1).equals("1");
             b.setDisable(!active);
         }
 
         // Create button sequence
-        private void buttonSequencer(Button b, int id){
+        private void buttonSequencer(Button b, int id) {
             if (!sequencer) return;
 
             // record this press
             buttonSequence.add(b);
             buttonIDs.add(id);
-            
+
             if (id == sequenceConfirmId && buttonSequence.size() == sequenceLength) {
                 sendFuelSelection();
                 resetSequence();
@@ -313,21 +336,20 @@ public class screen {
         }
 
         // Reset button sequence
-        private void resetSequence(){
+        private void resetSequence() {
             sequencer = false;
             sequenceLength = 0;
             sequenceConfirmId = -1;
-            for (Button btn : buttonSequence) btn.setDisable(false);
+            for (Button btn: buttonSequence) btn.setDisable(false);
             buttonSequence.clear();
             buttonIDs.clear();
         }
 
-
         // Send fuel selection
-        private void sendFuelSelection(){
+        private void sendFuelSelection() {
 
             // Determine row number
-            horizontal row = hList.get(buttonIDs.getFirst()/2);
+            horizontal row = hList.get(buttonIDs.getFirst() / 2);
             String msg = row.tL.getText();
             System.out.println("SENDING: Fuel-Grade. - " + msg);
             Platform.runLater(() -> display.api.send("Fuel-Grade. - " + msg));
@@ -335,13 +357,17 @@ public class screen {
         }
 
         // Make textfield Bold
-        private void makeBold(Label a){ a.setFont(Font.font(a.getFont().getFamily(), FontWeight.BOLD, a.getFont().getSize())); }
+        private void makeBold(Label a) {
+            a.setFont(Font.font(a.getFont().getFamily(), FontWeight.BOLD, a.getFont().getSize()));
+        }
 
         // Make textfield italic
-        private void makeItalic(Label a){ a.setFont(Font.font(a.getFont().getFamily(), FontPosture.ITALIC, a.getFont().getSize())); }
+        private void makeItalic(Label a) {
+            a.setFont(Font.font(a.getFont().getFamily(), FontPosture.ITALIC, a.getFont().getSize()));
+        }
 
         // Combine 2 left/right text fields into 1 center field
-        private void combineTextFields(Label a, Label ab, Label b){
+        private void combineTextFields(Label a, Label ab, Label b) {
             a.setMaxWidth(0);
             b.setMaxWidth(0);
             ab.setMaxWidth(Double.MAX_VALUE);
@@ -350,7 +376,7 @@ public class screen {
         }
 
         // Divide 1 center text field into 2 left/right fields
-        private void divideTextFields(Label a, Label ab, Label b){
+        private void divideTextFields(Label a, Label ab, Label b) {
             a.setMaxWidth(Double.MAX_VALUE);
             b.setMaxWidth(Double.MAX_VALUE);
             ab.setMaxWidth(0);
@@ -360,5 +386,7 @@ public class screen {
     /**
      * Main method to launch the JavaFX app.
      */
-    public static void main(String[] args) { Application.launch(screen.screenGraphics.class, args); }
+    public static void main(String[] args) {
+        Application.launch(screen.screenGraphics.class, args);
+    }
 }

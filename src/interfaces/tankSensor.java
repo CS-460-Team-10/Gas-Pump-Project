@@ -15,35 +15,35 @@ public class tankSensor {
         // Optionally announce initial state:
         tankFull = false;
         maxFuel = 12.0;
-        fuelStartLevel = Math.random()*6.0;
+        fuelStartLevel = Math.random() * 6.0;
         System.out.println("Max Fuel Capacity: " + this.maxFuel);
         System.out.println("Current Fuel Level: " + this.fuelStartLevel);
 
         reading();
     }
 
-    private void reading(){
+    private void reading() {
         String msg = null;
         double currentFuelLevel = fuelStartLevel;
-        
-        while(true){
+
+        while (true) {
             msg = api.get();
 
             if (msg != null && !msg.isEmpty()) {
 
-                if(msg.contains("Gal Pumped: ")){
+                if (msg.contains("Gal Pumped: ")) {
                     String[] tokens = msg.split(":");
                     if (tokens.length > 1) {
                         try {
                             double fuelBought = Double.parseDouble(tokens[1].trim());
                             currentFuelLevel = fuelBought + fuelStartLevel;
-                            if(currentFuelLevel >= maxFuel) { 
-                                tankFull = true; 
-                                api.send("Tank-Full."); 
+                            if (currentFuelLevel >= maxFuel) {
+                                tankFull = true;
+                                api.send("Tank-Full.");
 
                                 // Reset simulate next fuel tank
-                                fuelStartLevel = Math.random()*6.0;
-                                tankFull = false; 
+                                fuelStartLevel = Math.random() * 6.0;
+                                tankFull = false;
                             }
                             System.out.println("Fuel Level updated: " + String.format("%.2f", currentFuelLevel) + " gallons");
                         } catch (NumberFormatException e) {
