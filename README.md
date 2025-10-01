@@ -1,55 +1,100 @@
+# Gas Pump Simulator
 
-### Button Sequencer
+A graphical user interface (GUI) application that simulates the operation of a modern gas pump, developed using Java and JavaFX.
 
-When `bps/…` is active, the Screen records button presses and only sends the final domain message upon confirmation. For fuel selection the Hub typically sends:
+## Table of Contents
 
-- `bps/1b3` — one selection press, then **Confirm** on button id `3` (row 2 right).
+- [About The Project](#about-the-project)
+- [Features](#features)
+- [Technologies](#technologies)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation and Execution](#installation-and-execution)
+- [Usage](#usage)
+- [Contributors](#contributors)
 
-The Screen will reply with:
+## About The Project
 
-- `Fuel-Grade. - <GradeName>`
+This project is a simulation of a gas pump interface created for a software engineering course at the University of New Mexico. It allows a user to interact with a digital pump, select fuel types, prepay, dispense fuel, and view the transaction details in real-time. The goal is to model the state and logic of a real-world gas pump system in a software application using a developed socket API.
 
-### Business Messages
+## Features
 
-- **Products and prices**
-  - From Gas Station → Hub:  
-    `Product-List. - Unleaded/3.25:Premium/3.75:PremiumPlus/4.00:Gasoline/3.50`
-  - Hub forwards to devices that need it (e.g., Flow Meter).
+* **Fuel Selection**: Choose from multiple grades of fuel (i.e. Regular, Mid-Grade, Premium).
+* **Dynamic Pricing and Products**: Prices are displayed and used for calculations and can be modified in the gas station gui.
+* **RFID Payment Scanning**: Use a card reader to scan a credit card to pay.
+* **Account Simulation**: A bank account and balance is simulated.
+* **Fuel Tank Fullness Simulation**: A fuel tank level is simulated and will never overfill due to a simulated fullness sensor.
+* **Real-Time Dispensing**: A "Start" button initiates the fuel flow, with the display updating the volume and cost in real-time. A "Stop" button halts the process.
+* **Live Transaction Display**: The interface continuously shows the number of gallons pumped.
+* **Receipt / Summary**: At the end of the transaction, a summary is displayed.
 
-- **Fuel selection**
-  - From Screen → Hub:  
-    `Fuel-Grade. - Unleaded`
+## Technologies
 
-- **Card flow**
-  - From Card Reader → Hub:  
-    `Card-No. - 4111-1111-1111-1111`
-  - From Bank → Hub:  
-    `C1` (approved) or `C0` (declined)
-  - Hub → Bank (charge after fueling):  
-    `Charge-Card. - 12.34`  (numeric only)
+* **[Java](https://www.oracle.com/java/)**: Core application logic.
+* **[JavaFX](https://openjfx.io/)**: Framework for the graphical user interface.
 
-- **Hose / tank**
-  - Hose → Hub: `Hose-Attached.` / `Hose-Detached.`
-  - Tank Sensor → Hub: `Tank-Full.` / `Tank-Not-Full.`
+## Project Structure
 
-- **Flow meter**
-  - Start/stop control (Hub → Meter/Pump): `FM1` (on), `FM0` (off)
-  - Recommended final total (Meter → Hub):  
-    `Total-Cost. - 12.34`  
-    or, if sending a human summary, Hub extracts the numeric cost.
+The project is organized into the following main directories:
 
----
+* `src/`: Contains all the Java source code (`.java` files).
+    * `interfaces/`: Contains each device interface i.e. the screen, pump, bank, station, hose, etc.
+    * `clients/`: Contains all object handlers for the device interfaces which hub.java oversees.
+    * `socketAPI/`: Contains the server and client socket API's which are used in all communication.
+* `res/`: Contains application resources, such as custom developed images.
+* `out/`: The default output directory for compiled Java bytecode (`.class` files).
 
-## Build & Run
+## Getting Started
+
+Follow these instructions to get a local copy up and running.
 
 ### Prerequisites
 
-- **JDK 21** (tested with Azul Zulu 21)
-- **JavaFX 21** SDK on your classpath for UI modules (`screen`, `cardReader`, `hose`)
+1.  **Java Development Kit (JDK) 21**
+    * Make sure you have JDK 21 installed and your `JAVA_HOME` environment variable is set.
 
-### Compile
+2.  **JavaFX SDK 21**
+    * Download the JavaFX SDK from the [JavaFX website](https://gluonhq.com/products/javafx/).
+    * Unzip the SDK to a known location on your computer.
+    * It is highly recommended to create an environment variable `PATH_TO_FX` that points to the `lib` folder inside your JavaFX SDK directory.
+        * Example on macOS/Linux: `export PATH_TO_FX=/path/to/javafx-sdk-21/lib`
+        * Example on Windows: `set PATH_TO_FX="C:\path\to\javafx-sdk-21\lib"`
 
-You can compile with your IDE or plain `javac`. Example (non-modular classpath):
+### Installation and Execution
 
-```bash
-javac -cp "path/to/javafx/lib/*" *.java
+1.  **Clone the repository:**
+    ```sh
+    git clone [https://github.com/CS-460-Team-10/Gas-Pump-Project.git](https://github.com/CS-460-Team-10/Gas-Pump-Project.git)
+    cd Gas-Pump-Project
+    ```
+
+2.  **Compile the source code:**  
+    Compile all java files:
+    ```sh
+    javac *.java
+    ```
+4.  **Run the application:**  
+    Open multiple terminal windows and run each interface module and then lastly run the hub.java file. Each is a standalone interface that runs separately.
+
+
+## Usage
+
+Once the application is running, you can use it as you would a real gas pump:
+
+1.  **Scan Card**: Click the card reader to scan your card.
+2.  **Select Fuel Grade**: Click on one of the fuel grade buttons and then click confirm.
+4.  **Connect Hose**: Click the hose to connect it to the car. Fueling will begin shortly when you do.
+5.  **Fueling**: Live fuel flow can be seen in the flow meter.
+6.  **Stop Pumping**: Click the "Stop" button at any time to finish the transaction. The pumping will also stop automatically if the hose becomes disconnected.
+7.  **View End**: A final screen will be displayed and gallons purchased can be seen in the flowmeter.
+
+## Contributors
+
+This project was developed by **Team 10** for the UNM-CS-460 course.  
+- Alex Maynes (Project Manager)  
+- Jackie Javier  
+- Ricardo Rangel Valencia  
+- Momen Katba Bader  
+  
+---
