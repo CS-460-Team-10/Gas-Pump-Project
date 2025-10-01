@@ -25,4 +25,20 @@ public class GasStation {
     public void close() throws IOException {
         gasStationPort.close();
     }
+
+    public void turnOn() {
+        gasStationPort.send("ON");
+    }
+
+    public void turnOff() {
+        gasStationPort.send("OFF");
+    }
+
+    public void sendPriceList(String priceList) {
+        gasStationPort.send("Price-list(p) " + priceList);
+    }
+
+    public void recordCashPayment(double amount) {
+        gasStationPort.send("Cash-paid(d) " + amount);
+    }
 }

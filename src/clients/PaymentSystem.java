@@ -25,4 +25,20 @@ public class PaymentSystem {
     public void close() throws IOException {
         bankPort.close();
     }
+
+    public boolean authorize(String cardNumber) throws InterruptedException {
+        bankPort.send("Card-No. - " + cardNumber);
+
+        String response = null;
+        while (response == null) {
+            response = bankPort.get();
+        }
+
+        return response.contains("Card-Approved.");
+    }
+
+    public void chargeRequest(String cardNum, double amount) {
+        bankPort.send("Transaction-Complete. Amount: " + amount +
+                "Card-No: " + cardNum);
+    }
 }

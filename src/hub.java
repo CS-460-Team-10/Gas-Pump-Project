@@ -31,6 +31,7 @@ public class hub {
     private final GasStation gasStation;
     private int counter = 0;
     private String[] ProductList = new String[4];
+    private String currentCard = null;
 
     public hub() throws IOException {
 
@@ -50,7 +51,7 @@ public class hub {
         // Get initial Gas Station prices and fwd it to screen, pump, and flowmeter
         String msg = null;
         while (msg == null) {
-            msg = pollInterfaceMessages("GasStation");
+            msg = gasStation.getFromStation();
         }
         if (msg.contains("Inactivity Timeout")) {
             msg = null;
@@ -75,7 +76,15 @@ public class hub {
 
             // Process Card Data
             if (msg.contains("Card-No. - ") && customer.screenState.equals(UI_WELCOME)) {
-                processCard(msg);
+                currentCard = msg.replace("Card-No. - ", "");
+                if (paymentSystem.authorize(currentCard)) {
+                    customer.sendCardApproved();
+                    Thread.sleep(2000);
+                    customer.display(UI_SELECT_FUEL);
+                } else {
+                    customer.sendCardDenied();
+                    currentCard = null;
+                }
 
                 // Process Fuel Selection
             } else if (msg.contains("Fuel-Grade. - ") && customer.screenState.equals(UI_SELECT_FUEL)) {
