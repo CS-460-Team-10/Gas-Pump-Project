@@ -76,15 +76,7 @@ public class hub {
 
             // Process Card Data
             if (msg.contains("Card-No. - ") && customer.screenState.equals(UI_WELCOME)) {
-                currentCard = msg.replace("Card-No. - ", "");
-                if (paymentSystem.authorize(currentCard)) {
-                    customer.sendCardApproved();
-                    Thread.sleep(2000);
-                    customer.display(UI_SELECT_FUEL);
-                } else {
-                    customer.sendCardDenied();
-                    currentCard = null;
-                }
+                processCard(msg);
 
                 // Process Fuel Selection
             } else if (msg.contains("Fuel-Grade. - ") && customer.screenState.equals(UI_SELECT_FUEL)) {
@@ -182,23 +174,14 @@ public class hub {
 
     // Process card data
     private void processCard(String msg) throws InterruptedException {
-        paymentSystem.sendToBank(msg); // send card data to bank
-
-        msg = null;
-        while (msg == null) {
-            msg = pollInterfaceMessages("Bank");
-        } // wait for bank response
-        if (msg.contains("Inactivity Timeout")) {
-            msg = null;
-            return;
-        }
-
-        if (msg.contains("Card-Approved.")) {
-            customer.sendCardApproved(); // card approved
+        currentCard = msg.replace("Card-No. - ", "");
+        if (paymentSystem.authorize(currentCard)) {
+            customer.sendCardApproved();
             Thread.sleep(2000);
-            customer.display(UI_SELECT_FUEL); // select fuel screen
-        } else if (msg.contains("Card-Denied.")) {
-            customer.sendCardDenied(); // card denied
+            customer.display(UI_SELECT_FUEL);
+        } else {
+            customer.sendCardDenied();
+            currentCard = null;
         }
     }
 
